@@ -54,8 +54,8 @@ const MeetingPlanner: React.FC<MeetingPlannerProps> = ({ onMeetingCreated }) => 
       padding: 10,
       boxShadow: '0 1px 6px #0002',
       color: '#ffe066',
-      minWidth: 220,
-      maxWidth: 260,
+      width: '100%',
+      maxWidth: '100%',
     }}>
       <h2 style={{ color: '#ffe066', marginBottom: 4, fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>New Meeting</h2>
       <input
