@@ -28,6 +28,14 @@ const PAGES = [
 const PAGE_STORAGE_KEY = 'ck.page';
 const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'chat', 'facebook', 'upload']);
 
+const FB_MOBILE_URL = 'https://m.facebook.com/profile.php?id=61586021865588';
+const FB_DESKTOP_URL = 'https://www.facebook.com/profile.php?id=61586021865588';
+
+function getFacebookUrl() {
+  if (typeof window === 'undefined') return FB_DESKTOP_URL;
+  return window.innerWidth <= 900 ? FB_MOBILE_URL : FB_DESKTOP_URL;
+}
+
 const WelcomePage: React.FC<{ user: any; onNavigate: (page: string) => void }> = ({ user, onNavigate }) => (
   <div className="welcome">
     <img src="/carp_king_logo.png" alt="Carp King Logo" className="welcome-logo" />
@@ -69,12 +77,19 @@ const MainApp: React.FC = () => {
     return ALLOWED_PAGES.has(stored) ? stored : 'welcome';
   });
   const [navOpen, setNavOpen] = useState(false);
+  const [facebookUrl, setFacebookUrl] = useState(getFacebookUrl());
   const { user } = useAuth();
   if (!user) return <Login />;
 
   useEffect(() => {
     localStorage.setItem(PAGE_STORAGE_KEY, page);
   }, [page]);
+
+  useEffect(() => {
+    const handleResize = () => setFacebookUrl(getFacebookUrl());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (page === 'welcome') {
     return <WelcomePage user={user} onNavigate={setPage} />;
@@ -92,7 +107,7 @@ const MainApp: React.FC = () => {
             <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
             <button onClick={() => setPage('chat')} className="btn btn-nav">Global Chat</button>
             <a
-              href="https://www.facebook.com/profile.php?id=61586021865588"
+              href={facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-nav"
@@ -119,7 +134,7 @@ const MainApp: React.FC = () => {
           <button onClick={() => { setPage('meetings'); setNavOpen(false); }} className="btn btn-nav">Meetings</button>
           <button onClick={() => { setPage('chat'); setNavOpen(false); }} className="btn btn-nav">Global Chat</button>
           <a
-            href="https://www.facebook.com/profile.php?id=61586021865588"
+            href={facebookUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-nav"
