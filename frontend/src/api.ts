@@ -23,9 +23,18 @@ export async function clearUsers(): Promise<any> {
   return parseJsonSafe(res);
 }
 
+import { useAuth } from './components/AuthContext';
+
 export async function removeMeeting(meetingId: string): Promise<void> {
+  // Try to send admin role header if available
+  const userStr = localStorage.getItem('user');
+  let role = '';
+  try {
+    if (userStr) role = JSON.parse(userStr).role;
+  } catch {}
   const res = await fetch(`${API_URL}/meetings/${meetingId}`, {
     method: 'DELETE',
+    headers: role === 'admin' ? { 'x-user-role': 'admin' } : {},
   });
   if (!res.ok) throw new Error('Failed to remove meeting');
 }

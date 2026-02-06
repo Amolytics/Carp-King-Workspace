@@ -224,6 +224,11 @@ router.post('/meetings', async (req, res) => {
 router.delete('/meetings/:meetingId', async (req, res) => {
   await schemaReady;
   const { meetingId } = req.params;
+  // Simple admin check: require ?admin=1 or x-admin header, or check session if implemented
+  const userRole = req.header('x-user-role') || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Only admin can remove meetings.' });
+  }
   await withDb(db => {
     const existing = queryOne<{ id: string }>(db, 'SELECT id FROM meetings WHERE id = ?', [meetingId]);
     if (!existing) {

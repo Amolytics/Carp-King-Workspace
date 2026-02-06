@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
 import { Meeting } from '../types';
 import { getMeetings, removeMeeting } from '../api';
 import MeetingChat from './MeetingChat';
@@ -15,6 +16,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ onMeetingRemoved }) => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [removing, setRemoving] = useState<string | null>(null);
   const [openMeeting, setOpenMeeting] = useState<any | null>(null);
+  const { user } = useAuth();
 
   const fetchMeetings = () => {
     getMeetings().then(setMeetings);
@@ -98,19 +100,21 @@ const MeetingList: React.FC<MeetingListProps> = ({ onMeetingRemoved }) => {
                   }}
                   onClick={() => setOpenMeeting(meeting)}
                 >Join</button>
-                <button onClick={() => handleRemove(meeting.id)} disabled={removing === meeting.id} style={{
-                  background: '#c00',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '6px 18px',
-                  fontWeight: 700,
-                  fontSize: 15,
-                  boxShadow: '0 1px 4px #0004',
-                  cursor: 'pointer',
-                  opacity: removing === meeting.id ? 0.6 : 1,
-                  transition: 'opacity 0.2s',
-                }}>Remove</button>
+                {user?.role === 'admin' && (
+                  <button onClick={() => handleRemove(meeting.id)} disabled={removing === meeting.id} style={{
+                    background: '#c00',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '6px 18px',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    boxShadow: '0 1px 4px #0004',
+                    cursor: 'pointer',
+                    opacity: removing === meeting.id ? 0.6 : 1,
+                    transition: 'opacity 0.2s',
+                  }}>Remove</button>
+                )}
               </div>
             </div>
           ))}
