@@ -404,8 +404,16 @@ a {
   }
 
   .global-chat {
-    height: 60vh;
+    height: 70vh;
     padding: 2px;
+  }
+
+  .app-shell {
+    padding-bottom: 8px;
+  }
+
+  .app-content {
+    padding-bottom: 8px;
   }
 
   .global-chat-title {
