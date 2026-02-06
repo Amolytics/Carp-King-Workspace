@@ -473,6 +473,17 @@ a {
     padding: 10px 14px;
   }
 
+  .nav-drawer .btn-nav {
+    min-height: 10px;
+    padding: 1px 4px;
+    font-size: 10px;
+  }
+
+  .nav-drawer a.btn-nav,
+  .nav-drawer button.btn-nav {
+    font-size: 10px;
+  }
+
   .btn-nav {
     flex: 1 1 140px;
   }

@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import AdminButton from './AdminButton';
 
 const ImageUpload: React.FC<{ onUpload: (url: string) => void }> = ({ onUpload }) => {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -29,14 +28,11 @@ const ImageUpload: React.FC<{ onUpload: (url: string) => void }> = ({ onUpload }
   };
 
   return (
-    <>
-      <AdminButton />
-      <form onSubmit={handleUpload}>
-        <input type="file" accept="image/*" ref={fileInput} />
-        <button type="submit" disabled={uploading}>Upload Image</button>
-        {error && <div style={{ color: 'red' }}>{error}</div>}
-      </form>
-    </>
+    <form onSubmit={handleUpload}>
+      <input type="file" accept="image/*" ref={fileInput} />
+      <button type="submit" disabled={uploading}>Upload Image</button>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+    </form>
   );
 };
 
