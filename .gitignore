@@ -18,3 +18,7 @@ Thumbs.db
 .idea/
 .env
 *.env
+
+# Local data stores
+data/*.sqlite
+data/*.db
