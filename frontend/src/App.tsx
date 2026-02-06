@@ -81,10 +81,12 @@ const MainApp: React.FC = () => {
             <button onClick={() => setPage('slots')} className="btn btn-nav">Slot Planner</button>
             <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
             <button onClick={() => setPage('chat')} className="btn btn-nav">Global Chat</button>
-            <button
-              onClick={() => window.open('https://www.facebook.com/profile.php?id=61586021865588', '_blank')}
+            <a
+              href="https://www.facebook.com/profile.php?id=61586021865588"
+              target="_blank"
+              rel="noopener noreferrer"
               className="btn btn-nav"
-            >Facebook</button>
+            >Facebook</a>
             {user.role === 'admin' && (
               <button onClick={() => setPage('upload')} className="btn btn-nav">Admin</button>
             )}
@@ -106,12 +108,15 @@ const MainApp: React.FC = () => {
           <button onClick={() => { setPage('slots'); setNavOpen(false); }} className="btn btn-nav">Slot Planner</button>
           <button onClick={() => { setPage('meetings'); setNavOpen(false); }} className="btn btn-nav">Meetings</button>
           <button onClick={() => { setPage('chat'); setNavOpen(false); }} className="btn btn-nav">Global Chat</button>
-          <button
-            onClick={() => { window.open('https://www.facebook.com/profile.php?id=61586021865588', '_blank'); setNavOpen(false); }}
+          <a
+            href="https://www.facebook.com/profile.php?id=61586021865588"
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn btn-nav"
+            onClick={() => setNavOpen(false)}
           >
             Facebook
-          </button>
+          </a>
           {user.role === 'admin' && (
             <button onClick={() => { setPage('upload'); setNavOpen(false); }} className="btn btn-nav">Admin</button>
           )}

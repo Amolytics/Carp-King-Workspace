@@ -101,21 +101,8 @@ const GlobalChat: React.FC = () => {
   };
 
   return (
-    <div style={{
-      border: '1px solid #888',
-      margin: '0 auto 4px auto',
-      padding: '8px 8px 0 8px',
-      width: '100%',
-      maxWidth: 1200,
-      height: '75vh',
-      minHeight: 260,
-      overflow: 'hidden',
-      boxSizing: 'border-box',
-      position: 'relative',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <h1 style={{ color: '#ffe066', fontSize: 32, margin: '8px 0 12px 0' }}>Global Team Chat</h1>
+    <div className="global-chat">
+      <h1 className="global-chat-title">Global Team Chat</h1>
       {/* Online users display */}
       <div style={{ marginBottom: 8, color: '#ffe066', fontSize: 15 }}>
         <b>Online:</b> {onlineUsers.length > 0 ? onlineUsers.join(', ') : 'None'}
@@ -126,20 +113,7 @@ const GlobalChat: React.FC = () => {
           {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
         </div>
       )}
-      <div style={{
-        flex: 1,
-        width: '100%',
-        background: '#23241a',
-        boxSizing: 'border-box',
-        color: '#23241a',
-        overflowY: 'auto',
-        marginBottom: user ? 0 : 8,
-        borderRadius: 8,
-        border: '1.5px solid #ffe06633',
-        padding: '8px 10px',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
+      <div className="global-chat-body">
         {messages.map(m => (
           <div key={m.id}>
             <b style={{ color: getUserColor(m.user) }}>{m.user}:</b>
