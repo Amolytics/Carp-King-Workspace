@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import initSqlJs, { Database, SqlValue } from 'sql.js';
 
-const DATA_DIR = path.resolve(__dirname, '../../data');
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.resolve(__dirname, '../../data');
 export const DATA_FILE = path.join(DATA_DIR, 'app.sqlite');
 
 function ensureDataDir() {

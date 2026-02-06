@@ -24,7 +24,10 @@ const GlobalChat: React.FC = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (chatEndRef.current) {
@@ -46,6 +49,43 @@ const GlobalChat: React.FC = () => {
     };
   }, []);
 
+  // Listen for online users
+  useEffect(() => {
+    const handlePresence = (users: any[]) => {
+      setOnlineUsers(users.map(u => u.name));
+    };
+    socket.on('presence:update', handlePresence);
+    // Join presence on mount
+    if (user) {
+      socket.emit('presence:join', { id: user.id, name: user.name, role: user.role });
+    }
+    return () => {
+      socket.off('presence:update', handlePresence);
+      if (user) {
+        socket.emit('presence:leave');
+      }
+    };
+  }, [user]);
+
+  // Listen for typing updates
+  useEffect(() => {
+    const handleTypingUpdate = (names: string[]) => {
+      setTypingUsers(names.filter(n => n !== user?.name));
+    };
+    socket.on('global:typing:update', handleTypingUpdate);
+    return () => {
+      socket.off('global:typing:update', handleTypingUpdate);
+    };
+  }, [user]);
+
+  // Emit typing events
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+    if (user) {
+      socket.emit('global:typing', { user: user.name, isTyping: !!e.target.value });
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !text.trim()) return;
@@ -53,6 +93,8 @@ const GlobalChat: React.FC = () => {
       const msg = await addGlobalChat(user.name, text.trim());
       setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
       setText('');
+      // Stop typing
+      socket.emit('global:typing', { user: user.name, isTyping: false });
     } catch {
       // Ignore send errors for now
     }
@@ -74,6 +116,16 @@ const GlobalChat: React.FC = () => {
       flexDirection: 'column',
     }}>
       <h1 style={{ color: '#ffe066', fontSize: 32, margin: '8px 0 12px 0' }}>Global Team Chat</h1>
+      {/* Online users display */}
+      <div style={{ marginBottom: 8, color: '#ffe066', fontSize: 15 }}>
+        <b>Online:</b> {onlineUsers.length > 0 ? onlineUsers.join(', ') : 'None'}
+      </div>
+      {/* Typing indicator */}
+      {typingUsers.length > 0 && (
+        <div style={{ color: '#ffd54f', fontSize: 14, marginBottom: 4 }}>
+          {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+        </div>
+      )}
       <div style={{
         flex: 1,
         width: '100%',
@@ -112,7 +164,7 @@ const GlobalChat: React.FC = () => {
           <input
             type="text"
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={handleTyping}
             placeholder="Type a message"
             required
             style={{

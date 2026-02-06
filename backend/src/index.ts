@@ -25,11 +25,16 @@ function broadcastPresence() {
   io.emit('presence:update', users);
 }
 
+// Online users and typing indicator tracking
+const typingUsers = new Set<string>();
+
 io.on('connection', socket => {
   socket.on('presence:join', (user: PresenceUser) => {
     if (!user || !user.id || !user.name) return;
     presenceBySocket.set(socket.id, user);
     broadcastPresence();
+    // Notify new user of current typing users
+    socket.emit('global:typing:update', Array.from(typingUsers));
   });
 
   socket.on('presence:leave', () => {
@@ -39,12 +44,22 @@ io.on('connection', socket => {
 
   socket.on('global:typing', (payload: { user: string; isTyping: boolean }) => {
     if (!payload || !payload.user) return;
-    socket.broadcast.emit('global:typing', payload);
+    if (payload.isTyping) {
+      typingUsers.add(payload.user);
+    } else {
+      typingUsers.delete(payload.user);
+    }
+    io.emit('global:typing:update', Array.from(typingUsers));
   });
 
   socket.on('disconnect', () => {
+    const user = presenceBySocket.get(socket.id);
+    if (user) {
+      typingUsers.delete(user.name);
+    }
     presenceBySocket.delete(socket.id);
     broadcastPresence();
+    io.emit('global:typing:update', Array.from(typingUsers));
   });
 });
 

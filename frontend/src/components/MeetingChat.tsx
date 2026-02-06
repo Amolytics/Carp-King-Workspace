@@ -7,6 +7,7 @@ import { socket } from '../realtime';
 const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
   const { user } = useAuth();
   const [text, setText] = useState('');
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [chat, setChat] = useState<Comment[]>(meeting.chat);
     useEffect(() => {
       const handleMessage = ({ meetingId, comment }: { meetingId: string; comment: Comment }) => {
@@ -14,13 +15,25 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
         setChat(prev => (prev.some(c => c.id === comment.id) ? prev : [...prev, comment]));
       };
       socket.on('meeting:chat', handleMessage);
+      // Typing indicator
+      const handleTypingUpdate = (names: string[]) => {
+        setTypingUsers(names.filter(n => n !== user?.name));
+      };
+      socket.on('global:typing:update', handleTypingUpdate);
       return () => {
         socket.off('meeting:chat', handleMessage);
+        socket.off('global:typing:update', handleTypingUpdate);
       };
-    }, [meeting.id]);
+    }, [meeting.id, user]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+    if (user) {
+      socket.emit('global:typing', { user: user.name, isTyping: !!e.target.value });
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -30,6 +43,7 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
       const comment = await addMeetingChat(meeting.id, user.id, text);
       setChat(prev => (prev.some(c => c.id === comment.id) ? prev : [...prev, comment]));
       setText('');
+      socket.emit('global:typing', { user: user.name, isTyping: false });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -50,6 +64,12 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
           </button>
         )}
       </div>
+      {/* Typing indicator */}
+      {typingUsers.length > 0 && (
+        <div style={{ color: '#ffd54f', fontSize: 14, marginBottom: 4 }}>
+          {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+        </div>
+      )}
       <div style={{
         height: 220,
         overflowY: 'auto',
@@ -73,7 +93,7 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
           <input
             type="text"
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={handleTyping}
             placeholder="Add a message"
             required
             style={{
