@@ -5,6 +5,7 @@ import { getMeetings, removeMeeting } from '../api';
 import MeetingChat from './MeetingChat';
 import MeetingCountdown from './MeetingCountdown';
 import MeetingRoom from './MeetingRoom';
+import { socket } from '../realtime';
 
 interface MeetingListProps {
   onMeetingRemoved?: () => void;
@@ -21,6 +22,17 @@ const MeetingList: React.FC<MeetingListProps> = ({ onMeetingRemoved }) => {
 
   useEffect(() => {
     fetchMeetings();
+  }, []);
+
+  useEffect(() => {
+    const handleMeetingEnd = (payload: { meetingId: string }) => {
+      if (!payload?.meetingId) return;
+      setOpenMeeting(prev => (prev?.id === payload.meetingId ? null : prev));
+    };
+    socket.on('meeting:end', handleMeetingEnd);
+    return () => {
+      socket.off('meeting:end', handleMeetingEnd);
+    };
   }, []);
 
   const handleRemove = async (meetingId: string) => {

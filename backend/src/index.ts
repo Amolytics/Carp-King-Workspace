@@ -52,6 +52,11 @@ io.on('connection', socket => {
     io.emit('global:typing:update', Array.from(typingUsers));
   });
 
+  socket.on('meeting:end', (payload: { meetingId: string }) => {
+    if (!payload?.meetingId) return;
+    io.emit('meeting:end', payload);
+  });
+
   socket.on('disconnect', () => {
     const user = presenceBySocket.get(socket.id);
     if (user) {

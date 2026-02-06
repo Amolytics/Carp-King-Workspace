@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { socket } from '../realtime';
 import MeetingChat from './MeetingChat';
 
 interface MeetingRoomProps {
@@ -82,7 +83,16 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
             </div>
           )}
           {user?.role === 'admin' && (
-            <button onClick={onClose} className="btn btn-danger" style={{ marginTop: 8 }}>Close</button>
+            <button
+              onClick={() => {
+                socket.emit('meeting:end', { meetingId: meeting.id });
+                onClose();
+              }}
+              className="btn btn-danger"
+              style={{ marginTop: 8 }}
+            >
+              End Meeting
+            </button>
           )}
         </div>
       </div>
