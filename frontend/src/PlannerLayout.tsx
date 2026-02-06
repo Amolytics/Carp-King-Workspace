@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import SlotList from './components/SlotList';
 import ImageUpload from './components/ImageUpload';
-import AdminButton from './components/AdminButton';
 
 const PlannerLayout: React.FC = () => {
   const [postContent, setPostContent] = useState('');
@@ -10,7 +9,6 @@ const PlannerLayout: React.FC = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   return (
     <>
-      <AdminButton />
       <div className="planner-layout">
         <div className="panel">
           <h2 style={{ marginBottom: 18 }}>Schedule a Post</h2>

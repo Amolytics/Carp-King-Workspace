@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import MeetingPlanner from './components/MeetingPlanner';
 import MeetingList from './components/MeetingList';
-import AdminButton from './components/AdminButton';
 
 const MeetingsPage: React.FC = () => {
   const [refresh, setRefresh] = useState(0);
@@ -11,7 +10,6 @@ const MeetingsPage: React.FC = () => {
   return (
     <div className="meetings-layout">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <AdminButton />
         <div className="panel panel-compact" style={{ width: '100%', maxWidth: 280, marginBottom: 12 }}>
           <MeetingPlanner onMeetingCreated={handleMeetingCreated} />
         </div>
