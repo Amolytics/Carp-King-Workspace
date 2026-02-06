@@ -10,7 +10,7 @@ const MeetingsPage: React.FC = () => {
   return (
     <div className="meetings-layout">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="panel panel-compact" style={{ width: '100%', maxWidth: 280, marginBottom: 12 }}>
+        <div className="panel panel-compact meeting-planner-panel" style={{ width: '100%', maxWidth: 280, marginBottom: 12 }}>
           <MeetingPlanner onMeetingCreated={handleMeetingCreated} />
         </div>
       </div>

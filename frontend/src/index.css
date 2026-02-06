@@ -474,9 +474,13 @@ a {
   }
 
   .nav-drawer .btn-nav {
-    min-height: 10px;
-    padding: 1px 4px;
-    font-size: 10px;
+    min-height: 5px;
+    padding: 1px 2px;
+    font-size: 9px;
+  }
+  
+  .meeting-planner-panel {
+    max-width: 100%;
   }
 
   .nav-drawer a.btn-nav,
