@@ -1,0 +1,20 @@
+# Node and build artifacts
+node_modules/
+dist/
+build/
+.cache/
+.DS_Store
+*.log
+
+# Frontend and backend specific
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/dist/
+
+# OS and editor files
+Thumbs.db
+.vscode/
+.idea/
+.env
+*.env

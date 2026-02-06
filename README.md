@@ -10,7 +10,7 @@
 3. Build the backend:
    npm run build
 4. Start the backend server:
-   npm run start
+   npm run dev
    - Runs on http://localhost:4000
 
 ### Frontend (React + Vite)

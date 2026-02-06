@@ -1,0 +1,15 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0d0e;
+  background-image: url('/dpm-overlay.svg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+h1 {
+  color: #ffe066;
+  text-shadow: 2px 2px 8px #222;
+}

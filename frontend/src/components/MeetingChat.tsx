@@ -1,0 +1,121 @@
+import React, { useState, useEffect } from 'react';
+import { Meeting, Comment } from '../types';
+import { addMeetingChat } from '../api';
+import { useAuth } from './AuthContext';
+import { socket } from '../realtime';
+
+const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
+  const { user } = useAuth();
+  const [text, setText] = useState('');
+  const [chat, setChat] = useState<Comment[]>(meeting.chat);
+    useEffect(() => {
+      const handleMessage = ({ meetingId, comment }: { meetingId: string; comment: Comment }) => {
+        if (meetingId !== meeting.id) return;
+        setChat(prev => (prev.some(c => c.id === comment.id) ? prev : [...prev, comment]));
+      };
+      socket.on('meeting:chat', handleMessage);
+      return () => {
+        socket.off('meeting:chat', handleMessage);
+      };
+    }, [meeting.id]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const comment = await addMeetingChat(meeting.id, user.id, text);
+      setChat(prev => (prev.some(c => c.id === comment.id) ? prev : [...prev, comment]));
+      setText('');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ border: '1px solid #ccc', margin: 8, padding: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h4 style={{ margin: 0 }}>Meeting Chat</h4>
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setChat([])}
+            style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, fontSize: 13, borderRadius: 6, padding: '4px 14px', border: 'none', boxShadow: '0 1px 4px #0002', cursor: 'pointer', marginLeft: 12 }}
+          >
+            Clear Chat
+          </button>
+        )}
+      </div>
+      <div style={{
+        height: 220,
+        overflowY: 'auto',
+        background: '#23241a',
+        borderRadius: 8,
+        padding: 8,
+        margin: '12px 0',
+        border: '1.5px solid #ffe06633',
+      }}>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          {chat.map(c => (
+            <li key={c.id} style={{ marginBottom: 8 }}><b>{c.userId}</b>: {c.text} <span style={{ fontSize: 10, color: '#888' }}>{c.createdAt}</span></li>
+          ))}
+        </ul>
+      </div>
+      {user && (
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', width: '100%', marginTop: 8 }}
+        >
+          <input
+            type="text"
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="Add a message"
+            required
+            style={{
+              flex: 1,
+              fontSize: 15,
+              borderRadius: 6,
+              border: '1.5px solid #ffe06655',
+              padding: '8px 12px',
+              marginRight: 8,
+              background: '#fffbe6',
+              color: '#23241a',
+              outline: 'none',
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              background: '#ffe066',
+              color: '#23241a',
+              fontWeight: 700,
+              fontSize: 15,
+              borderRadius: 6,
+              padding: '8px 18px',
+              border: 'none',
+              boxShadow: '0 1px 4px #0002',
+              cursor: 'pointer',
+            }}
+          >
+            Send
+          </button>
+        </form>
+      )}
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+    </div>
+  );
+};
+
+export default MeetingChat;
