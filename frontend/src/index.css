@@ -484,10 +484,15 @@ a {
   .meeting-room-side {
     width: 100%;
     min-width: 0;
+    padding: 4px 2px !important;
+    box-sizing: border-box;
   }
 
   .meeting-room-chatbox {
     height: 36vh;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
   }
 }
 
