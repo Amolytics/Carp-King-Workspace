@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SlotList from './components/SlotList';
 import MeetingList from './components/MeetingList';
 import ImageUpload from './components/ImageUpload';
@@ -24,6 +24,9 @@ const PAGES = [
   { key: 'chat', label: 'Global Chat' },
   { key: 'facebook', label: 'Facebook' },
 ];
+
+const PAGE_STORAGE_KEY = 'ck.page';
+const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'chat', 'facebook', 'upload']);
 
 const WelcomePage: React.FC<{ user: any; onNavigate: (page: string) => void }> = ({ user, onNavigate }) => (
   <div className="welcome">
@@ -61,10 +64,17 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 const MainApp: React.FC = () => {
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  const [page, setPage] = useState<string>('welcome');
+  const [page, setPage] = useState<string>(() => {
+    const stored = localStorage.getItem(PAGE_STORAGE_KEY) || 'welcome';
+    return ALLOWED_PAGES.has(stored) ? stored : 'welcome';
+  });
   const [navOpen, setNavOpen] = useState(false);
   const { user } = useAuth();
   if (!user) return <Login />;
+
+  useEffect(() => {
+    localStorage.setItem(PAGE_STORAGE_KEY, page);
+  }, [page]);
 
   if (page === 'welcome') {
     return <WelcomePage user={user} onNavigate={setPage} />;
