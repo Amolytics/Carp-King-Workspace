@@ -105,7 +105,7 @@ const GlobalChat: React.FC = () => {
       border: '1px solid #888',
       margin: '0 auto 4px auto',
       padding: '8px 8px 0 8px',
-      width: '98vw',
+      width: '100%',
       maxWidth: 1200,
       height: '75vh',
       minHeight: 260,
