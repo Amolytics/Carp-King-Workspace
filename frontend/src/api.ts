@@ -3,12 +3,24 @@ import { Slot, Meeting, User, Comment, GlobalChatMessage } from './types';
 
 export const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 
+async function parseJsonSafe(res: Response): Promise<any> {
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return res.json();
+  }
+  const text = await res.text();
+  if (text.trim().startsWith('<')) {
+    throw new Error('API request hit the frontend. Set VITE_API_URL to your backend URL.');
+  }
+  throw new Error('Unexpected API response format.');
+}
+
 // Clear all users except default admin (admin only)
 export async function clearUsers(): Promise<any> {
   const res = await fetch(`${API_URL}/clear-users`, {
     method: 'POST',
   });
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function removeMeeting(meetingId: string): Promise<void> {
@@ -25,8 +37,9 @@ export async function login(name: string, password: string): Promise<User> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, password })
   });
-  if (!res.ok) throw new Error((await res.json()).error || 'Login failed');
-  return res.json();
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data.error || 'Login failed');
+  return data;
 }
 
 export async function signup(name: string, password: string, chatUsername: string): Promise<User> {
@@ -35,13 +48,14 @@ export async function signup(name: string, password: string, chatUsername: strin
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, password, chatUsername })
   });
-  if (!res.ok) throw new Error((await res.json()).error || 'Signup failed');
-  return res.json();
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data.error || 'Signup failed');
+  return data;
 }
 
 export async function getSlots(): Promise<Slot[]> {
   const res = await fetch(`${API_URL}/slots`);
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function addSlot(slot: Omit<Slot, 'id' | 'comments'>): Promise<Slot> {
@@ -50,7 +64,7 @@ export async function addSlot(slot: Omit<Slot, 'id' | 'comments'>): Promise<Slot
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(slot)
   });
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function addComment(slotId: string, userId: string, text: string): Promise<Comment> {
@@ -59,12 +73,12 @@ export async function addComment(slotId: string, userId: string, text: string): 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, text })
   });
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function getMeetings(): Promise<Meeting[]> {
   const res = await fetch(`${API_URL}/meetings`);
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function addMeeting(meeting: Omit<Meeting, 'id' | 'chat'>): Promise<Meeting> {
@@ -73,7 +87,7 @@ export async function addMeeting(meeting: Omit<Meeting, 'id' | 'chat'>): Promise
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(meeting)
   });
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function addMeetingChat(meetingId: string, userId: string, text: string): Promise<Comment> {
@@ -82,12 +96,12 @@ export async function addMeetingChat(meetingId: string, userId: string, text: st
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, text })
   });
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function getGlobalChat(): Promise<GlobalChatMessage[]> {
   const res = await fetch(`${API_URL}/chat/global`);
-  return res.json();
+  return parseJsonSafe(res);
 }
 
 export async function addGlobalChat(user: string, text: string): Promise<GlobalChatMessage> {
@@ -96,5 +110,5 @@ export async function addGlobalChat(user: string, text: string): Promise<GlobalC
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user, text })
   });
-  return res.json();
+  return parseJsonSafe(res);
 }
