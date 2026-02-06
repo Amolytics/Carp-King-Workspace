@@ -119,10 +119,10 @@ a {
 .nav-drawer .btn-nav {
   min-width: 0;
   width: 100%;
-  height: 36px;
-  padding: 6px 10px;
-  font-size: 13px;
-  letter-spacing: 0.2px;
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+  letter-spacing: 0.1px;
 }
 
 .nav-drawer.open {
@@ -273,7 +273,7 @@ a {
 .global-chat {
   border: 1px solid #888;
   margin: 0 auto 4px;
-  padding: 8px 8px 0;
+  padding: 8px 16px 0 8px;
   width: 100%;
   max-width: 1200px;
   height: 72vh;
