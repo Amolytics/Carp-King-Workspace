@@ -38,5 +38,9 @@
 - UI components: see frontend/src/components/
 - Update .env files as needed for configuration
 
+## Railway Deployment Notes
+- If a build fails with `npm: not found`, ensure Railway uses Nixpacks.
+- Keep `nixpacks.toml` at the repo root so Railway installs Node and runs the backend from `backend/`.
+
 ---
 For more details, see the code and comments in each folder.

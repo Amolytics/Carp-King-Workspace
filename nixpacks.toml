@@ -1,0 +1,17 @@
+[providers]
+node = "20"
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm run start"
+
+[variables]
+NPM_CONFIG_PRODUCTION = "false"
+
+[deploy]
+root = "backend"
