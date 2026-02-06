@@ -199,6 +199,29 @@ a {
   text-align: center;
 }
 
+.btn-badge {
+  position: relative;
+  padding-right: 26px;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ff5c5c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 1px 4px #0006;
+}
+
 .welcome {
   display: flex;
   flex-direction: column;
@@ -486,6 +509,19 @@ a {
   .nav-drawer a.btn-nav,
   .nav-drawer button.btn-nav {
     font-size: 10px;
+  }
+
+  .nav-drawer .btn-badge {
+    padding-right: 18px;
+  }
+
+  .nav-drawer .unread-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 14px;
+    height: 14px;
+    font-size: 9px;
+    padding: 0 4px;
   }
 
   .btn-nav {

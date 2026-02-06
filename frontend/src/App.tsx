@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SlotList from './components/SlotList';
 import MeetingList from './components/MeetingList';
 import ImageUpload from './components/ImageUpload';
@@ -16,6 +16,7 @@ import SlotPlanner from './components/SlotPlanner';
 import MeetingsPage from './MeetingsPage';
 import LogoutButton from './components/LogoutButton';
 import AdminPanel from './components/AdminPanel';
+import { socket } from './realtime';
 
 const PAGES = [
   { key: 'welcome', label: 'Welcome' },
@@ -27,6 +28,7 @@ const PAGES = [
 
 const PAGE_STORAGE_KEY = 'ck.page';
 const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'chat', 'facebook', 'upload']);
+const UNREAD_KEY_PREFIX = 'ck.unread.';
 
 const FB_MOBILE_URL = 'https://m.facebook.com/profile.php?id=61586021865588';
 const FB_DESKTOP_URL = 'https://www.facebook.com/profile.php?id=61586021865588';
@@ -36,7 +38,7 @@ function getFacebookUrl() {
   return window.innerWidth <= 900 ? FB_MOBILE_URL : FB_DESKTOP_URL;
 }
 
-const WelcomePage: React.FC<{ user: any; onNavigate: (page: string) => void }> = ({ user, onNavigate }) => (
+const WelcomePage: React.FC<{ user: any; onNavigate: (page: string) => void; unreadCount: number }> = ({ user, onNavigate, unreadCount }) => (
   <div className="welcome">
     <img src="/carp_king_logo.png" alt="Carp King Logo" className="welcome-logo" />
     <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 4 }}>Welcome, {user.name}!</h1>
@@ -44,7 +46,10 @@ const WelcomePage: React.FC<{ user: any; onNavigate: (page: string) => void }> =
     <div className="welcome-actions">
       <button onClick={() => onNavigate('slots')} className="btn btn-nav">Slot Planner</button>
       <button onClick={() => onNavigate('meetings')} className="btn btn-nav">Meetings</button>
-      <button onClick={() => onNavigate('chat')} className="btn btn-nav">Global Chat</button>
+      <button onClick={() => onNavigate('chat')} className="btn btn-nav btn-badge">
+        <span>Global Chat</span>
+        {unreadCount > 0 && <span className="unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+      </button>
       <button onClick={() => onNavigate('facebook')} className="btn btn-nav">Facebook</button>
     </div>
     <LogoutButton onNavigate={onNavigate} />
@@ -78,11 +83,46 @@ const MainApp: React.FC = () => {
   });
   const [navOpen, setNavOpen] = useState(false);
   const [facebookUrl, setFacebookUrl] = useState(getFacebookUrl());
+  const [chatUnread, setChatUnread] = useState(0);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const { user } = useAuth();
   if (!user) return <Login />;
 
   useEffect(() => {
+    const key = `${UNREAD_KEY_PREFIX}${user.id}`;
+    const stored = localStorage.getItem(key);
+    setChatUnread(stored ? Number(stored) || 0 : 0);
+    seenMessageIdsRef.current = new Set();
+  }, [user.id]);
+
+  useEffect(() => {
+    const key = `${UNREAD_KEY_PREFIX}${user.id}`;
+    localStorage.setItem(key, String(chatUnread));
+  }, [chatUnread, user.id]);
+
+  useEffect(() => {
     localStorage.setItem(PAGE_STORAGE_KEY, page);
+  }, [page]);
+
+  useEffect(() => {
+    if (page === 'chat') {
+      setChatUnread(0);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    const handleMessage = (message: { id: string }) => {
+      if (!message?.id) return;
+      if (seenMessageIdsRef.current.has(message.id)) return;
+      seenMessageIdsRef.current.add(message.id);
+      if (page !== 'chat') {
+        setChatUnread(prev => prev + 1);
+      }
+    };
+    socket.on('global:message', handleMessage);
+    return () => {
+      socket.off('global:message', handleMessage);
+    };
   }, [page]);
 
   useEffect(() => {
@@ -92,7 +132,7 @@ const MainApp: React.FC = () => {
   }, []);
 
   if (page === 'welcome') {
-    return <WelcomePage user={user} onNavigate={setPage} />;
+    return <WelcomePage user={user} onNavigate={setPage} unreadCount={chatUnread} />;
   }
 
   return (
@@ -105,7 +145,10 @@ const MainApp: React.FC = () => {
             <button onClick={() => setPage('welcome')} className="btn btn-nav">Home</button>
             <button onClick={() => setPage('slots')} className="btn btn-nav">Slot Planner</button>
             <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
-            <button onClick={() => setPage('chat')} className="btn btn-nav">Global Chat</button>
+            <button onClick={() => setPage('chat')} className="btn btn-nav btn-badge">
+              <span>Global Chat</span>
+              {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
+            </button>
             <a
               href={facebookUrl}
               target="_blank"
@@ -132,7 +175,10 @@ const MainApp: React.FC = () => {
           <button onClick={() => { setPage('welcome'); setNavOpen(false); }} className="btn btn-nav">Home</button>
           <button onClick={() => { setPage('slots'); setNavOpen(false); }} className="btn btn-nav">Slot Planner</button>
           <button onClick={() => { setPage('meetings'); setNavOpen(false); }} className="btn btn-nav">Meetings</button>
-          <button onClick={() => { setPage('chat'); setNavOpen(false); }} className="btn btn-nav">Global Chat</button>
+          <button onClick={() => { setPage('chat'); setNavOpen(false); }} className="btn btn-nav btn-badge">
+            <span>Global Chat</span>
+            {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
+          </button>
           <a
             href={facebookUrl}
             target="_blank"

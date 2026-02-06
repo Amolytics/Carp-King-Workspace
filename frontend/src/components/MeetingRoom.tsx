@@ -25,10 +25,6 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
   const chatRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  const handleGenerateMinutes = () => {
-    // TODO: Implement minutes generation
-    alert('Generate Minutes (not implemented)');
-  };
   const handleLockUnlockChat = () => {
     setChatLocked(l => !l);
   };
@@ -56,7 +52,7 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
         <div className="meeting-room-chat">
           <div className="meeting-room-title">{meeting.agenda}</div>
           <div ref={chatRef} className="meeting-room-chatbox">
-            <MeetingChat meeting={meeting} />
+            <MeetingChat meeting={meeting} isLocked={chatLocked} />
           </div>
         </div>
         {/* Notes/Actions Section */}
@@ -81,7 +77,6 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
           <button onClick={handleDownloadChat} className="btn" style={{ marginTop: 8, marginBottom: 8 }}>Download Meeting Chat</button>
           {user?.role === 'admin' && (
             <div className="meeting-room-actions">
-              <button onClick={handleGenerateMinutes} className="btn">Generate Minutes</button>
               <button onClick={handleLockUnlockChat} className={`btn ${chatLocked ? 'btn-danger' : ''}`}>{chatLocked ? 'Unlock Chat' : 'Lock Chat'}</button>
               <button onClick={handleArchive} className={`btn ${archived ? 'btn-secondary' : ''}`} disabled={archived}>Archive</button>
             </div>
