@@ -74,8 +74,12 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
                     // attempt to delete meeting via API (requires admin role)
                     const { removeMeeting } = await import('../api');
                     await removeMeeting(meeting.id);
+                    // Notify other clients via server (server emits on delete)
+                    // Also dispatch a local browser event so this client refreshes immediately
+                    window.dispatchEvent(new CustomEvent('meeting:removed', { detail: { meetingId: meeting.id } }));
                   } catch (err) {
-                    // fallback: emit socket event if API delete fails
+                    // notify user and attempt to close UI and inform others to close
+                    alert('Failed to delete meeting (API). Closing the meeting view.');
                     socket.emit('meeting:end', { meetingId: meeting.id });
                   } finally {
                     onClose();

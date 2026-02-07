@@ -39,9 +39,18 @@ const MeetingList: React.FC<MeetingListProps> = ({ onMeetingRemoved }) => {
       setOpenMeeting(prev => (prev?.id === payload.meetingId ? null : prev));
     };
     socket.on('meeting:removed', handleMeetingRemoved);
+    const handleMeetingRemovedWindow = (e: Event) => {
+      // support local CustomEvent from MeetingRoom
+      const detail = (e as CustomEvent)?.detail as { meetingId?: string } | undefined;
+      if (!detail?.meetingId) return;
+      fetchMeetings();
+      setOpenMeeting(prev => (prev?.id === detail.meetingId ? null : prev));
+    };
+    window.addEventListener('meeting:removed', handleMeetingRemovedWindow as EventListener);
     return () => {
       socket.off('meeting:end', handleMeetingEnd);
       socket.off('meeting:removed', handleMeetingRemoved);
+      window.removeEventListener('meeting:removed', handleMeetingRemovedWindow as EventListener);
     };
   }, []);
 
