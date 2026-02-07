@@ -69,7 +69,18 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
               <>
                 <button onClick={handleLockUnlockChat} className={`btn ${chatLocked ? 'btn-danger' : ''}`} style={{ borderRadius: 8 }}>{chatLocked ? 'Unlock Chat' : 'Lock Chat'}</button>
                 <button onClick={handleArchive} className={`btn ${archived ? 'btn-secondary' : ''}`} style={{ borderRadius: 8 }} disabled={archived}>Archive</button>
-                <button onClick={() => { socket.emit('meeting:end', { meetingId: meeting.id }); onClose(); }} className="btn btn-danger" style={{ borderRadius: 8 }}>End Meeting</button>
+                <button onClick={async () => {
+                  try {
+                    // attempt to delete meeting via API (requires admin role)
+                    const { removeMeeting } = await import('../api');
+                    await removeMeeting(meeting.id);
+                  } catch (err) {
+                    // fallback: emit socket event if API delete fails
+                    socket.emit('meeting:end', { meetingId: meeting.id });
+                  } finally {
+                    onClose();
+                  }
+                }} className="btn btn-danger" style={{ borderRadius: 8 }}>End Meeting</button>
               </>
             )}
           </div>

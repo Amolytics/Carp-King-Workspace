@@ -236,6 +236,10 @@ router.delete('/meetings/:meetingId', async (req, res) => {
     }
     db.run('DELETE FROM meetings WHERE id = ?', [meetingId]);
     saveDb(db);
+    // Notify connected clients that the meeting was removed
+    emit('meeting:removed', { meetingId });
+    // Also send meeting:end to prompt any open meeting UIs to close
+    emit('meeting:end', { meetingId });
     res.json({ ok: true });
   });
 });

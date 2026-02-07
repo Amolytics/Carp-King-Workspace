@@ -32,8 +32,16 @@ const MeetingList: React.FC<MeetingListProps> = ({ onMeetingRemoved }) => {
       setOpenMeeting(prev => (prev?.id === payload.meetingId ? null : prev));
     };
     socket.on('meeting:end', handleMeetingEnd);
+    const handleMeetingRemoved = (payload: { meetingId: string }) => {
+      if (!payload?.meetingId) return;
+      // refresh meetings list and close open meeting if it was removed
+      fetchMeetings();
+      setOpenMeeting(prev => (prev?.id === payload.meetingId ? null : prev));
+    };
+    socket.on('meeting:removed', handleMeetingRemoved);
     return () => {
       socket.off('meeting:end', handleMeetingEnd);
+      socket.off('meeting:removed', handleMeetingRemoved);
     };
   }, []);
 
