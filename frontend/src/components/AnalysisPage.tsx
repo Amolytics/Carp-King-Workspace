@@ -228,22 +228,29 @@ const FollowersSparkline: React.FC<{ history: AnalysisResult[] }> = ({ history }
   );
 };
 
-// Simple bar chart for posts counts
+// Thin line chart for recent posts counts
 const PostsBarChart: React.FC<{ history: AnalysisResult[] }> = ({ history }) => {
   if (!history || history.length === 0) return <div>No data</div>;
-  const counts = history.map(h => Array.isArray(h.data?.posts?.data) ? h.data.posts.data.length : 0).reverse();
-  const viewW = 300, viewH = 60, barGap = 4;
-  const barWidth = Math.max(4, (viewW - (counts.length - 1) * barGap) / Math.max(1, counts.length));
+  const counts = history.map(h => Array.isArray(h.data?.posts?.data) ? h.data.posts.data.length : 0);
+  const viewW = 300, viewH = 60, padding = 6;
   const max = Math.max(...counts, 1);
+  const min = Math.min(...counts, 0);
+  const step = (viewW - padding * 2) / Math.max(1, counts.length - 1);
+  const path = counts.map((v, i) => {
+    const x = padding + i * step;
+    const y = viewH - padding - ((v - min) / (max - min || 1)) * (viewH - padding * 2);
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+  const circles = counts.map((v, i) => {
+    const x = padding + i * step;
+    const y = viewH - padding - ((v - min) / (max - min || 1)) * (viewH - padding * 2);
+    return <circle key={i} cx={x} cy={y} r={2} fill="#7fb3ff" />;
+  });
   return (
     <svg viewBox={`0 0 ${viewW} ${viewH}`} width="100%" height={viewH} preserveAspectRatio="none">
       <rect x={0} y={0} width={viewW} height={viewH} fill="#23241a" rx={4} />
-      {counts.map((c, i) => {
-        const x = i * (barWidth + barGap);
-        const bh = (c / max) * (viewH - 8);
-        const y = viewH - bh - 4;
-        return <rect key={i} x={x} y={y} width={barWidth} height={bh} fill="#4caf50" />;
-      })}
+      <path d={path} stroke="#7fb3ff" strokeWidth={1} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      {circles}
     </svg>
   );
 };
