@@ -21,7 +21,7 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
   const [actions, setActions] = useState(meeting.actionItems.join(', '));
   const [showNotes, setShowNotes] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const [chatLocked, setChatLocked] = useState(false);
+  const [chatLocked, setChatLocked] = useState(true);
   const [archived, setArchived] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
