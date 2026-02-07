@@ -24,8 +24,6 @@ export async function clearUsers(): Promise<any> {
   return parseJsonSafe(res);
 }
 
-import { useAuth } from './components/AuthContext';
-
 export async function removeMeeting(meetingId: string): Promise<void> {
   // Try to send admin role header if available
   const userStr = localStorage.getItem('user');

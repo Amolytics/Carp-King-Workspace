@@ -5,8 +5,8 @@ const ImageUpload: React.FC<{ onUpload: (url: string) => void }> = ({ onUpload }
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpload = async (e?: any) => {
+    e?.preventDefault?.();
     if (!fileInput.current?.files?.[0]) return;
     setUploading(true);
     setError(null);
@@ -28,11 +28,11 @@ const ImageUpload: React.FC<{ onUpload: (url: string) => void }> = ({ onUpload }
   };
 
   return (
-    <form onSubmit={handleUpload}>
+    <div>
       <input type="file" accept="image/*" ref={fileInput} />
-      <button type="submit" disabled={uploading}>Upload Image</button>
+      <button type="button" onClick={handleUpload} disabled={uploading}>Upload Image</button>
       {error && <div style={{ color: 'red' }}>{error}</div>}
-    </form>
+    </div>
   );
 };
 

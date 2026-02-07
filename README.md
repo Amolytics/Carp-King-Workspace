@@ -44,3 +44,20 @@
 
 ---
 For more details, see the code and comments in each folder.
+
+## CI: GHCR secrets
+
+- The workflow publishes the frontend image to GitHub Container Registry (`ghcr.io`). Org policies can block the default `GITHUB_TOKEN` from writing packages. To ensure CI can push images, create a Personal Access Token (PAT) with the following scopes:
+   - `write:packages` (required)
+   - `repo` (only if publishing from private repos)
+
+- Add these repository secrets in the repo settings:
+   - `REGISTRY_USERNAME` — the GitHub username that owns the PAT
+   - `REGISTRY_PAT` — the PAT value (keep this secret)
+
+- The CI workflow uses these secrets to log in to `ghcr.io` and push the built image. Alternatively, you can enable Actions package publishing in the organization settings to allow `GITHUB_TOKEN` to write packages.
+
+### Alternate secret name
+
+If you already created a single secret named `Amolytics` containing the PAT, the CI workflow accepts that as a fallback (it will use that secret as the PAT). Preferred setup is still the pair of secrets `REGISTRY_USERNAME` and `REGISTRY_PAT`.
+

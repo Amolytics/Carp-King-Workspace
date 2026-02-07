@@ -100,7 +100,7 @@ const MeetingList: React.FC<MeetingListProps> = ({ onMeetingRemoved }) => {
                 </span>
               </div>
               <div style={{ fontSize: 15, marginBottom: 2 }}>Notes: <span style={{ color: '#ffe066cc' }}>{meeting.notes}</span></div>
-              <div style={{ fontSize: 15 }}>Action Items: <span style={{ color: '#ffe066cc' }}>{meeting.actionItems.join(', ')}</span></div>
+              <div style={{ fontSize: 15 }}>Action Items: <span style={{ color: '#ffe066cc' }}>{(meeting.actionItems || []).join(', ')}</span></div>
               <div style={{ display: 'flex', gap: 10, marginTop: 10, justifyContent: 'flex-end' }}>
                 <button
                   style={{
