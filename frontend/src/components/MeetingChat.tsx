@@ -57,7 +57,17 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
   return (
     <div style={{ border: '1px solid #ccc', margin: 8, padding: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h4 style={{ margin: 0 }}>Meeting Chat</h4>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h4 style={{ margin: 0 }}>Meeting Chat</h4>
+          {isLocked && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, color: '#ffd54f', background: '#2b2b2b', padding: '4px 8px', borderRadius: 6, border: '1px solid #ffe06633' }}>Locked</span>
+              {user?.role === 'admin' && (
+                <span style={{ fontSize: 11, background: '#ffe066', color: '#23241a', padding: '3px 8px', borderRadius: 6, fontWeight: 700 }}>Admin override</span>
+              )}
+            </div>
+          )}
+        </div>
         {user?.role === 'admin' && (
           <button
             onClick={() => setChat([])}
