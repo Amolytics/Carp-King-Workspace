@@ -17,6 +17,7 @@ import AnalysisPage from './components/AnalysisPage';
 import MeetingsPage from './MeetingsPage';
 import LogoutButton from './components/LogoutButton';
 import AdminPanel from './components/AdminPanel';
+import RandomSelectors from './components/RandomSelectors';
 import { socket } from './realtime';
 
 const PAGES = [
@@ -29,7 +30,7 @@ const PAGES = [
 ];
 
 const PAGE_STORAGE_KEY = 'ck.page';
-const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'analysis', 'chat', 'facebook', 'upload']);
+const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'analysis', 'chat', 'facebook', 'upload', 'randoms']);
 const UNREAD_KEY_PREFIX = 'ck.unread.';
 
 const FB_PAGE_ID = '61586021865588';
@@ -175,6 +176,7 @@ const MainApp: React.FC = () => {
             {user.role === 'admin' && (
               <button onClick={() => setPage('upload')} className="btn btn-nav">Admin</button>
             )}
+            <button onClick={() => setPage('randoms')} className="btn btn-nav">Randoms</button>
           </div>
           <button
             className="nav-toggle"
@@ -209,6 +211,7 @@ const MainApp: React.FC = () => {
           {user.role === 'admin' && (
             <button onClick={() => { setPage('upload'); setNavOpen(false); }} className="btn btn-nav">Admin</button>
           )}
+          <button onClick={() => { setPage('randoms'); setNavOpen(false); }} className="btn btn-nav">Randoms</button>
           <button className="btn btn-danger" onClick={() => setNavOpen(false)}>Dismiss</button>
         </div>
         <div className="app-content">
@@ -230,6 +233,7 @@ const MainApp: React.FC = () => {
           {page === 'analysis' && <AnalysisPage />}
           {page === 'slots' && <PlannerLayout />}
           {page === 'meetings' && <MeetingsPage />}
+          {page === 'randoms' && <RandomSelectors />}
         </div>
       </div>
     </ErrorBoundary>
