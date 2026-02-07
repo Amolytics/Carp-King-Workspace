@@ -33,10 +33,10 @@ jobs:
           file: frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/carp-king-frontend:latest
-            ghcr.io/${{ github.repository_owner }}/carp-king-frontend:${{ github.sha }}
+            ghcr.io/${{ toLower(github.repository_owner) }}/carp-king-frontend:latest
+            ghcr.io/${{ toLower(github.repository_owner) }}/carp-king-frontend:${{ github.sha }}
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
 
       - name: Output image
-        run: echo "IMAGE=ghcr.io/${{ github.repository_owner }}/carp-king-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: echo "IMAGE=ghcr.io/${{ toLower(github.repository_owner) }}/carp-king-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
