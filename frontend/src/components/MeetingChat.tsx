@@ -29,7 +29,8 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
   const [loading, setLoading] = useState(false);
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isLocked) return; // ignore typing when chat is locked
+    // allow admins to type even when locked
+    if (isLocked && user?.role !== 'admin') return;
     setText(e.target.value);
     if (user) {
       socket.emit('global:typing', { user: user.name, isTyping: !!e.target.value });
@@ -37,7 +38,8 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || isLocked) return;
+    // only allow send when not locked, or if user is admin
+    if (!user || (isLocked && user.role !== 'admin')) return;
     setLoading(true);
     setError(null);
     try {
@@ -95,9 +97,9 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
             type="text"
             value={text}
             onChange={handleTyping}
-            placeholder={isLocked ? 'Chat is locked' : 'Add a message'}
+            placeholder={isLocked ? (user?.role === 'admin' ? 'Add a message (admin override)' : 'Chat is locked') : 'Add a message'}
             required
-            disabled={isLocked}
+            disabled={isLocked && user?.role !== 'admin'}
             style={{
               flex: 1,
               fontSize: 15,
@@ -105,7 +107,7 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
               border: '1.5px solid #ffe06655',
               padding: '8px 12px',
               marginRight: 8,
-              background: isLocked ? '#2b2b2b' : '#fffbe6',
+              background: isLocked && user?.role !== 'admin' ? '#2b2b2b' : '#fffbe6',
               color: '#23241a',
               outline: 'none',
             }}
@@ -118,7 +120,7 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
           />
           <button
             type="submit"
-            disabled={loading || isLocked}
+            disabled={loading || (isLocked && user?.role !== 'admin')}
             style={{
               background: '#ffe066',
               color: '#23241a',
@@ -128,8 +130,8 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
               padding: '8px 18px',
               border: 'none',
               boxShadow: '0 1px 4px #0002',
-              cursor: isLocked ? 'not-allowed' : 'pointer',
-              opacity: isLocked ? 0.6 : 1,
+              cursor: isLocked && user?.role !== 'admin' ? 'not-allowed' : 'pointer',
+              opacity: isLocked && user?.role !== 'admin' ? 0.6 : 1,
             }}
           >
             Send
