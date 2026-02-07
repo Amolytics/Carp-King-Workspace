@@ -16,6 +16,13 @@ export interface Slot {
     enabled: boolean;
     offsetMinutes?: number;
   };
+  // scheduling fields
+  content?: string;
+  scheduledAt?: string; // ISO
+  published?: boolean;
+  publishedAt?: string;
+  fbResult?: any;
+  publishError?: string;
 }
 
 export interface Comment {
