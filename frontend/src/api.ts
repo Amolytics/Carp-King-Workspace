@@ -4,7 +4,26 @@ import { Slot, Meeting, User, Comment, GlobalChatMessage } from './types';
 const defaultApi = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost'
   ? 'http://localhost:4000/api'
   : '/api';
-export const API_URL = import.meta.env.VITE_API_URL ?? defaultApi;
+export const API_URL = (typeof window !== 'undefined' && (window as any).__API_URL__) || import.meta.env.VITE_API_URL ?? defaultApi;
+// Fallback backend API (used if the site-served /api is the frontend HTML). Set to the known backend domain.
+const FALLBACK_API = 'https://sublime-art-production-4fe1.up.railway.app/api';
+
+async function fetchJson(path: string, opts?: RequestInit) {
+  const target = path.startsWith('http') ? path : `${API_URL.replace(/\/+$/,'')}${path.startsWith('/') ? '' : '/'}${path}`;
+  const res = await fetch(target, opts);
+  try {
+    return await parseJsonSafe(res);
+  } catch (err) {
+    // If the response looks like HTML (frontend served), retry once against known backend
+    const msg = String((err as any)?.message || err || '');
+    if (msg.includes('likely hit the frontend')) {
+      const fallback = path.startsWith('http') ? path : `${FALLBACK_API.replace(/\/+$/,'')}${path.startsWith('/') ? '' : '/'}${path}`;
+      const res2 = await fetch(fallback, opts);
+      return await parseJsonSafe(res2);
+    }
+    throw err;
+  }
+}
 
 async function parseJsonSafe(res: Response): Promise<any> {
   const contentType = res.headers.get('content-type') || '';
@@ -21,10 +40,7 @@ async function parseJsonSafe(res: Response): Promise<any> {
 
 // Clear all users except default admin (admin only)
 export async function clearUsers(): Promise<any> {
-  const res = await fetch(`${API_URL}/clear-users`, {
-    method: 'POST',
-  });
-  return parseJsonSafe(res);
+  return fetchJson('/clear-users', { method: 'POST' });
 }
 
 export async function removeMeeting(meetingId: string): Promise<void> {
@@ -34,120 +50,95 @@ export async function removeMeeting(meetingId: string): Promise<void> {
   try {
     if (userStr) role = JSON.parse(userStr).role;
   } catch {}
-  const res = await fetch(`${API_URL}/meetings/${meetingId}`, {
-    method: 'DELETE',
-    headers: role === 'admin' ? { 'x-user-role': 'admin' } : {},
-  });
-  if (!res.ok) throw new Error('Failed to remove meeting');
+  const headers = role === 'admin' ? { 'x-user-role': 'admin' } : {};
+  await fetchJson(`/meetings/${meetingId}`, { method: 'DELETE', headers });
 }
 
 
 export async function login(name: string, password: string): Promise<User> {
-  const res = await fetch(`${API_URL}/login`, {
+  const data = await fetchJson('/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, password })
   });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) throw new Error(data.error || 'Login failed');
-  return data;
+  return data as User;
 }
 
 export async function signup(name: string, password: string, chatUsername: string): Promise<User> {
-  const res = await fetch(`${API_URL}/signup`, {
+  const data = await fetchJson('/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, password, chatUsername })
   });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) throw new Error(data.error || 'Signup failed');
-  return data;
+  return data as User;
 }
 
 export async function getSlots(): Promise<Slot[]> {
-  const res = await fetch(`${API_URL}/slots`);
-  return parseJsonSafe(res);
+  return fetchJson('/slots') as Promise<Slot[]>;
 }
 
 export async function addSlot(slot: Omit<Slot, 'id' | 'comments'>): Promise<Slot> {
-  const res = await fetch(`${API_URL}/slots`, {
+  const data = await fetchJson('/slots', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(slot)
   });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) throw new Error(data?.error || `API error: ${res.status}`);
-  return data;
+  return data as Slot;
 }
 
 export async function updateSlot(slotId: string, updates: Partial<Omit<Slot, 'id' | 'comments'>>): Promise<Slot> {
-  const res = await fetch(`${API_URL}/slots/${slotId}`, {
+  const data = await fetchJson(`/slots/${slotId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates)
   });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) throw new Error(data?.error || `API error: ${res.status}`);
-  return data;
+  return data as Slot;
 }
 
 export async function deleteSlot(slotId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/slots/${slotId}`, { method: 'DELETE' });
-  if (!res.ok) {
-    const data = await parseJsonSafe(res);
-    throw new Error(data?.error || `API error: ${res.status}`);
-  }
+  await fetchJson(`/slots/${slotId}`, { method: 'DELETE' });
 }
 
 export async function postSlotNow(slotId: string): Promise<any> {
-  const res = await fetch(`${API_URL}/slots/${slotId}/publish`, { method: 'POST' });
-  const data = await parseJsonSafe(res);
-  if (!res.ok) throw new Error(data?.error || `API error: ${res.status}`);
-  return data;
+  return fetchJson(`/slots/${slotId}/publish`, { method: 'POST' });
 }
 
 export async function addComment(slotId: string, userId: string, text: string): Promise<Comment> {
-  const res = await fetch(`${API_URL}/slots/${slotId}/comments`, {
+  return fetchJson(`/slots/${slotId}/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, text })
-  });
-  return parseJsonSafe(res);
+  }) as Promise<Comment>;
 }
 
 export async function getMeetings(): Promise<Meeting[]> {
-  const res = await fetch(`${API_URL}/meetings`);
-  return parseJsonSafe(res);
+  return fetchJson('/meetings') as Promise<Meeting[]>;
 }
 
 export async function addMeeting(meeting: Omit<Meeting, 'id' | 'chat'>): Promise<Meeting> {
-  const res = await fetch(`${API_URL}/meetings`, {
+  return fetchJson('/meetings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(meeting)
-  });
-  return parseJsonSafe(res);
+  }) as Promise<Meeting>;
 }
 
 export async function addMeetingChat(meetingId: string, userId: string, text: string): Promise<Comment> {
-  const res = await fetch(`${API_URL}/meetings/${meetingId}/chat`, {
+  return fetchJson(`/meetings/${meetingId}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, text })
-  });
-  return parseJsonSafe(res);
+  }) as Promise<Comment>;
 }
 
 export async function getGlobalChat(): Promise<GlobalChatMessage[]> {
-  const res = await fetch(`${API_URL}/chat/global`);
-  return parseJsonSafe(res);
+  return fetchJson('/chat/global') as Promise<GlobalChatMessage[]>;
 }
 
 export async function addGlobalChat(user: string, text: string): Promise<GlobalChatMessage> {
-  const res = await fetch(`${API_URL}/chat/global`, {
+  return fetchJson('/chat/global', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user, text })
-  });
-  return parseJsonSafe(res);
+  }) as Promise<GlobalChatMessage>;
 }
