@@ -53,11 +53,51 @@ app.get('/health', (req, res) => {
 
 // serve static build
 const staticDir = path.join(__dirname, 'dist');
+
+// Serve index.html with runtime injection for the root path before static middleware
+app.get(['/', '/index.html'], (req, res) => {
+  const indexPath = path.join(staticDir, 'index.html');
+  try {
+    let html = require('fs').readFileSync(indexPath, 'utf8');
+    const apiUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/+$/,'');
+    const socketUrl = (process.env.SOCKET_URL || apiUrl).replace(/\/+$/,'');
+    const snippet = `\n    <script>window.__API_URL__ = '${apiUrl.replace(/'/g, "\\'")}'+ '/api'; window.__SOCKET_URL__ = '${socketUrl.replace(/'/g, "\\'")}';</script>\n`;
+    if (html.indexOf('</head>') !== -1) {
+      html = html.replace('</head>', snippet + '</head>');
+    } else {
+      html = snippet + html;
+    }
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (err) {
+    console.error('Failed to read index for runtime injection', err);
+    res.sendFile(indexPath);
+  }
+});
+
 app.use(express.static(staticDir));
 
 // catch-all to support SPA routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(staticDir, 'index.html'));
+  // Serve index.html but inject runtime overrides for API and socket URLs
+  const indexPath = path.join(staticDir, 'index.html');
+  try {
+    let html = require('fs').readFileSync(indexPath, 'utf8');
+    const apiUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/+$/,'');
+    const socketUrl = (process.env.SOCKET_URL || apiUrl).replace(/\/+$/,'');
+    const snippet = `\n    <script>window.__API_URL__ = '${apiUrl.replace(/'/g, "\\'")}'+ '/api'; window.__SOCKET_URL__ = '${socketUrl.replace(/'/g, "\\'")}';</script>\n`;
+    // inject before closing </head> if present, otherwise prepend
+    if (html.indexOf('</head>') !== -1) {
+      html = html.replace('</head>', snippet + '</head>');
+    } else {
+      html = snippet + html;
+    }
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (err) {
+    console.error('Failed to read/serve index.html with runtime snippet', err);
+    res.sendFile(path.join(staticDir, 'index.html'));
+  }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
