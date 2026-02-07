@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { clearUsers, API_URL } from '../api';
 import FacebookSettings from './FacebookSettings';
+import { useCallback } from 'react';
 
 const panelStyle: React.CSSProperties = {
   background: 'rgba(30,32,24,0.97)',
@@ -54,10 +55,22 @@ function AdminPanel() {
   const [roleMsg, setRoleMsg] = useState<string | null>(null);
   const [backupToken, setBackupToken] = useState('');
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [fbStatus, setFbStatus] = useState<{ connected: boolean; page?: any; message?: string } | null>(null);
+
+  const fetchFbStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/facebook/status');
+      const json = await res.json();
+      setFbStatus(json);
+    } catch (err) {
+      setFbStatus({ connected: false, message: 'Failed to contact backend' });
+    }
+  }, []);
 
   useEffect(() => {
     setUserLoading(true);
     fetchUsers().then(setUsers).finally(() => setUserLoading(false));
+    fetchFbStatus();
   }, []);
 
   const refreshUsers = () => {
@@ -197,6 +210,20 @@ function AdminPanel() {
       <div style={{ width: '100%', margin: '6px 0 0 0', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
         <h3 style={{ color: '#ffe066', marginBottom: 2 }}>Facebook Page Details</h3>
         <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div>
+              {fbStatus ? (
+                fbStatus.connected ? (
+                  <span style={{ background: '#2f8f4a', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700 }}>Connected: {fbStatus.page?.name || fbStatus.page?.id || 'Page'}</span>
+                ) : (
+                  <span style={{ background: '#a33', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700 }}>Disconnected</span>
+                )
+              ) : (
+                <span style={{ padding: '4px 8px', borderRadius: 8, background: '#444', color: '#fff' }}>Checking…</span>
+              )}
+            </div>
+            <button style={{ ...buttonStyle, padding: '4px 8px' }} onClick={fetchFbStatus}>Refresh Status</button>
+          </div>
           <FacebookSettings />
         </div>
       </div>
