@@ -11,6 +11,7 @@ import FacebookPost from './components/FacebookPost';
 import GlobalChat from './components/GlobalChat';
 import PlannerLayout from './PlannerLayout';
 import SlotPlanner from './components/SlotPlanner';
+import AnalysisPage from './components/AnalysisPage';
 
 
 import MeetingsPage from './MeetingsPage';
@@ -22,12 +23,13 @@ const PAGES = [
   { key: 'welcome', label: 'Welcome' },
   { key: 'slots', label: 'Slot Planner' },
   { key: 'meetings', label: 'Meetings' },
+  { key: 'analysis', label: 'Analysis' },
   { key: 'chat', label: 'Global Chat' },
   { key: 'facebook', label: 'Facebook' },
 ];
 
 const PAGE_STORAGE_KEY = 'ck.page';
-const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'chat', 'facebook', 'upload']);
+const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'analysis', 'chat', 'facebook', 'upload']);
 const UNREAD_KEY_PREFIX = 'ck.unread.';
 
 const FB_MOBILE_URL = 'https://m.facebook.com/profile.php?id=61586021865588';
@@ -145,6 +147,7 @@ const MainApp: React.FC = () => {
             <button onClick={() => setPage('welcome')} className="btn btn-nav">Home</button>
             <button onClick={() => setPage('slots')} className="btn btn-nav">Slot Planner</button>
             <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
+                    <button onClick={() => setPage('analysis')} className="btn btn-nav">Analysis</button>
             <button onClick={() => setPage('chat')} className="btn btn-nav btn-badge">
               <span>Global Chat</span>
               {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
@@ -175,6 +178,7 @@ const MainApp: React.FC = () => {
           <button onClick={() => { setPage('welcome'); setNavOpen(false); }} className="btn btn-nav">Home</button>
           <button onClick={() => { setPage('slots'); setNavOpen(false); }} className="btn btn-nav">Slot Planner</button>
           <button onClick={() => { setPage('meetings'); setNavOpen(false); }} className="btn btn-nav">Meetings</button>
+          <button onClick={() => { setPage('analysis'); setNavOpen(false); }} className="btn btn-nav">Analysis</button>
           <button onClick={() => { setPage('chat'); setNavOpen(false); }} className="btn btn-nav btn-badge">
             <span>Global Chat</span>
             {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
@@ -209,6 +213,7 @@ const MainApp: React.FC = () => {
           ) : null}
           {/* Facebook button now links directly to Facebook page, so no internal Facebook tools */}
           {page === 'chat' && <GlobalChat />}
+          {page === 'analysis' && <AnalysisPage />}
           {page === 'slots' && <PlannerLayout />}
           {page === 'meetings' && <MeetingsPage />}
         </div>
