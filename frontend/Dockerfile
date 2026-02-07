@@ -4,7 +4,10 @@ WORKDIR /app
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 COPY package*.json ./
-RUN npm ci --silent
+# install build tools required by some native deps (esbuild, node-gyp, etc.)
+# then install dependencies
+RUN apk add --no-cache build-base python3 git && \
+	npm ci --silent
 COPY . .
 RUN npm run build
 
