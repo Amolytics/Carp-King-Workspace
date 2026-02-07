@@ -7,6 +7,7 @@ const SlotList: React.FC = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [editing, setEditing] = useState<Slot | null>(null);
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
+  const [nowTs, setNowTs] = useState<number>(Date.now());
   const [editContent, setEditContent] = useState('');
   const [editScheduled, setEditScheduled] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
@@ -60,12 +61,14 @@ const SlotList: React.FC = () => {
     window.addEventListener('slots:refresh', refreshHandler as EventListener);
     socket.on('slot:created', socketCreated);
     socket.on('slot:published', socketPublished);
+    const timer = setInterval(() => setNowTs(Date.now()), 1000);
     return () => {
       window.removeEventListener('slot:created', windowHandler as EventListener);
       window.removeEventListener('slots:refreshed', refreshedHandler as EventListener);
       window.removeEventListener('slots:refresh', refreshHandler as EventListener);
       socket.off('slot:created', socketCreated);
       socket.off('slot:published', socketPublished);
+      clearInterval(timer);
     };
   }, []);
 
@@ -105,17 +108,25 @@ const SlotList: React.FC = () => {
                   <div style={{ position: 'absolute', right: 0, top: 28, background: '#0b0c0a', border: '1px solid #2b2d28', borderRadius: 6, padding: 8, minWidth: 140, zIndex: 50 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <button onClick={() => { setMenuOpenFor(null); if (!slot.published) { setEditing(slot); setEditContent(slot.content || ''); setEditImageUrl(slot.imageUrl || ''); setEditScheduled(isoToInputLocal(slot.scheduledAt)); } else { alert('Cannot edit a published post'); } }} className="btn btn-ghost">Edit</button>
-                      <button onClick={async () => {
-                        setMenuOpenFor(null);
-                        if (slot.published) return alert('Already published');
-                        if (!confirm('Post this now?')) return;
-                        try {
-                          await postSlotNow(slot.id!);
-                          setSlots(prev => prev.filter(s => s.id !== slot.id));
-                        } catch (err: any) {
-                          alert('Publish failed: ' + (err?.message || String(err)));
-                        }
-                      }} className="btn">Post now</button>
+                      {
+                        (() => {
+                          const isDue = !!slot.scheduledAt && new Date(slot.scheduledAt).getTime() <= nowTs;
+                          return (
+                            <button onClick={async () => {
+                              setMenuOpenFor(null);
+                              if (!isDue) return alert('Not yet scheduled to post');
+                              if (slot.published) return alert('Already published');
+                              if (!confirm('Post this now?')) return;
+                              try {
+                                await postSlotNow(slot.id!);
+                                setSlots(prev => prev.filter(s => s.id !== slot.id));
+                              } catch (err: any) {
+                                alert('Publish failed: ' + (err?.message || String(err)));
+                              }
+                            }} className="btn" style={isDue ? {} : { opacity: 0.5 }} disabled={!isDue}>{isDue ? 'Post now' : 'Not ready'}</button>
+                          );
+                        })()
+                      }
                       <button onClick={async () => {
                         setMenuOpenFor(null);
                         if (slot.published) return alert('Cannot delete a published post');
