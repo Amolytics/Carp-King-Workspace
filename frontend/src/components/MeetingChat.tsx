@@ -39,23 +39,23 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
     if (!user || isLocked) return;
     setLoading(true);
     setError(null);
-    try {
-      const comment = await addMeetingChat(meeting.id, user.id, text);
-      setChat(prev => (prev.some(c => c.id === comment.id) ? prev : [...prev, comment]));
-      setText('');
-      socket.emit('global:typing', { user: user.name, isTyping: false });
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={{ width: '100%', height: '100%', margin: 0, padding: 0, border: 'none', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'stretch' }}>
-      {/* Chat area */}
       <div
         style={{
+          flex: 1,
+          width: '100%',
+          height: '100%',
+          overflowY: 'auto',
+          background: 'transparent',
+          borderRadius: 0,
+          padding: window.innerWidth <= 700 ? 0 : 1,
+          margin: 0,
+          border: 'none',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0,
+        }}
+      >
           flex: 1,
           width: '100%',
           height: '100%',
@@ -91,8 +91,8 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
                   background: c.userId === user?.id ? '#ffe066' : '#23241a',
                   color: c.userId === user?.id ? '#23241a' : '#ffe066',
                   borderRadius: 8,
-                  padding: window.innerWidth <= 700 ? '6px 8px' : '7px 12px',
-                  maxWidth: window.innerWidth <= 700 ? '90%' : '70%',
+                  padding: window.innerWidth <= 700 ? '6px 8px' : '7px 11px',
+                  maxWidth: window.innerWidth <= 700 ? '90%' : 'calc(70% - 1px)',
                   minWidth: 24,
                   fontSize: 13,
                   fontWeight: 500,
@@ -104,6 +104,7 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: c.userId === user?.id ? 'flex-end' : 'flex-start',
+                  boxSizing: 'border-box',
                 }}
               >
                 <span style={{ fontWeight: 700, fontSize: 11, opacity: 0.85 }}>{c.userId}</span>
