@@ -145,30 +145,7 @@ const FacebookSettings: React.FC = () => {
     }
   };
 
-  const [postMsg, setPostMsg] = useState('');
-  const handlePostNow = async () => {
-    if (!postMsg.trim()) return setError('Enter a message to post.');
-    setLoading(true);
-    setError(null);
-    setMessage('Posting...');
-    try {
-      const res = await fetch('/api/facebook/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: postMsg })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Post failed');
-      setMessage('Posted successfully.');
-      setPostMsg('');
-        // Refresh analysis after posting
-        fetch('/api/facebook/analysis/refresh', { method: 'POST' }).catch(() => null);
-    } catch (err: any) {
-      setError(err.message || 'Post failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   // Always show the form; if saved details exist, show them above the form and prefill inputs
 
@@ -210,13 +187,7 @@ const FacebookSettings: React.FC = () => {
         <button onClick={handlePullStats} disabled={loading} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>Pull Stats</button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ color: '#ffe066', fontWeight: 600 }}>Post to Page</div>
-        <textarea value={postMsg} onChange={e => setPostMsg(e.target.value)} placeholder="Message to post" style={{ minHeight: 80, padding: 8, borderRadius: 6, background: '#23241a', color: '#ffe066', border: '1px solid #ffe06655' }} />
-        <div>
-          <button onClick={handlePostNow} disabled={loading} style={{ background: '#ff7b7b', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>Post Now</button>
-        </div>
-      </div>
+      {/* Posting moved to Planner UI; removed from Admin to avoid duplicate controls */}
     </div>
   );
 };
