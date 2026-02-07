@@ -47,6 +47,17 @@ async function setUserRole(userId: string, role: string): Promise<any> {
   });
   return res.json();
 }
+
+// Mask a long token for UI display (show first/last chars only)
+function maskToken(t?: string) {
+  if (!t) return '';
+  try {
+    if (t.length <= 16) return t;
+    return `${t.slice(0, 6)}...${t.slice(-6)}`;
+  } catch (_e) {
+    return '';
+  }
+}
 function AdminPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,6 +67,7 @@ function AdminPanel() {
   const [backupToken, setBackupToken] = useState('');
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [fbStatus, setFbStatus] = useState<{ connected: boolean; page?: any; message?: string } | null>(null);
+  const [fbDetails, setFbDetails] = useState<any | null>(null);
 
   const fetchFbStatus = useCallback(async () => {
     try {
@@ -67,10 +79,22 @@ function AdminPanel() {
     }
   }, []);
 
+  const fetchFbDetails = useCallback(async () => {
+    try {
+      const res = await fetch('/api/facebook/get-page');
+      const json = await res.json();
+      if (json?.success && json.details) setFbDetails(json.details);
+      else setFbDetails(null);
+    } catch (err) {
+      setFbDetails(null);
+    }
+  }, []);
+
   useEffect(() => {
     setUserLoading(true);
     fetchUsers().then(setUsers).finally(() => setUserLoading(false));
     fetchFbStatus();
+    fetchFbDetails();
   }, []);
 
   const refreshUsers = () => {
@@ -214,7 +238,7 @@ function AdminPanel() {
             <div>
               {fbStatus ? (
                 fbStatus.connected ? (
-                  <span style={{ background: '#2f8f4a', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700 }}>Connected: {fbStatus.page?.name || fbStatus.page?.id || 'Page'}</span>
+                  <span style={{ background: '#2f8f4a', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700 }}>Connected</span>
                 ) : (
                   <span style={{ background: '#a33', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700 }}>Disconnected</span>
                 )
@@ -222,8 +246,15 @@ function AdminPanel() {
                 <span style={{ padding: '4px 8px', borderRadius: 8, background: '#444', color: '#fff' }}>Checking…</span>
               )}
             </div>
-            <button style={{ ...buttonStyle, padding: '4px 8px' }} onClick={fetchFbStatus}>Refresh Status</button>
+            <button style={{ ...buttonStyle, padding: '4px 8px' }} onClick={() => { fetchFbStatus(); fetchFbDetails(); }}>Refresh Status</button>
           </div>
+          {fbDetails && (
+            <div style={{ marginBottom: 8, padding: 8, background: 'rgba(255,224,102,0.06)', borderRadius: 8 }}>
+              <div style={{ fontSize: 13 }}>Page ID: <b style={{ color: '#fff' }}>{fbDetails.pageId}</b></div>
+              <div style={{ fontSize: 13 }}>Page Name: <b style={{ color: '#fff' }}>{fbDetails.pageName}</b></div>
+              <div style={{ fontSize: 13 }}>Access Token: <b style={{ fontFamily: 'monospace', color: '#fff' }}>{maskToken(fbDetails.accessToken)}</b></div>
+            </div>
+          )}
           <FacebookSettings />
         </div>
       </div>
