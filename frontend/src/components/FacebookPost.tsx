@@ -23,8 +23,9 @@ const FacebookPost: React.FC = () => {
         body: JSON.stringify({ message, imageUrl })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to post');
-      setResult('Posted to Facebook (stub)');
+      if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+      // show backend/Facebook response details for debugging (post id, errors)
+      setResult(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
     } catch (err: any) {
       setError(err.message);
     } finally {
