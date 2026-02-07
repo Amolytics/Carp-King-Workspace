@@ -10,7 +10,7 @@
     {
       "name": "frontend",
       "rootDir": "frontend",
-      "buildCommand": "docker build -f frontend/Dockerfile --build-arg VITE_API_URL=\"$VITE_API_URL\" -t carp-king-frontend:latest frontend/",
+      "image": "ghcr.io/amolytics/carp-king-frontend:f6d680e0c4a4bdda08bebe151e1753cb6f205d9a",
       "startCommand": "nginx -g 'daemon off;'"
     }
   ]
