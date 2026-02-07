@@ -88,6 +88,9 @@ const FacebookSettings: React.FC = () => {
       const details = { pageId, pageName, accessToken };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(details));
       setSaved(details);
+        // Trigger backend to validate and fetch latest analysis
+        fetch('/api/facebook/status').catch(() => null);
+        fetch('/api/facebook/analysis/refresh', { method: 'POST' }).catch(() => null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -158,6 +161,8 @@ const FacebookSettings: React.FC = () => {
       if (!res.ok) throw new Error(data.message || 'Post failed');
       setMessage('Posted successfully.');
       setPostMsg('');
+        // Refresh analysis after posting
+        fetch('/api/facebook/analysis/refresh', { method: 'POST' }).catch(() => null);
     } catch (err: any) {
       setError(err.message || 'Post failed');
     } finally {
