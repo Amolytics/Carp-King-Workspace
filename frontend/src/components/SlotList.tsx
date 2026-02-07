@@ -27,10 +27,13 @@ const SlotList: React.FC = () => {
     };
 
     window.addEventListener('slot:created', windowHandler as EventListener);
+    const refreshHandler = () => { getSlots().then(setSlots).catch(() => {}); };
+    window.addEventListener('slots:refresh', refreshHandler as EventListener);
     socket.on('slot:created', socketCreated);
     socket.on('slot:published', socketPublished);
     return () => {
       window.removeEventListener('slot:created', windowHandler as EventListener);
+      window.removeEventListener('slots:refresh', refreshHandler as EventListener);
       socket.off('slot:created', socketCreated);
       socket.off('slot:published', socketPublished);
     };

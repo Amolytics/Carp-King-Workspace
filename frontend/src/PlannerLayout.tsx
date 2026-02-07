@@ -60,6 +60,8 @@ const PlannerLayout: React.FC = () => {
                 // notify slot list to update immediately (after successful save)
                 try { window.dispatchEvent(new CustomEvent('slot:created', { detail: slot })); } catch (e) { /* ignore */ }
                 setSaveSuccess('Scheduled post saved.');
+                // notify other components to refresh slots list as a fallback
+                try { window.dispatchEvent(new CustomEvent('slots:refresh')); } catch (e) {}
                 // auto-clear success after a short time
                 setTimeout(() => setSaveSuccess(null), 4000);
               } catch (err: any) {
