@@ -14,6 +14,9 @@ const schemaReady = withDb(db => {
   db.run(
     'CREATE TABLE IF NOT EXISTS fb_user (id INTEGER PRIMARY KEY, userId TEXT NOT NULL, accessToken TEXT NOT NULL)'
   );
+  db.run(
+    'CREATE TABLE IF NOT EXISTS fb_analysis (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, data TEXT NOT NULL)'
+  );
 });
 
 // Set Facebook Page credentials (admin only)
@@ -144,3 +147,74 @@ router.post('/post', async (req, res) => {
 });
 
 export default router;
+
+// Background: fetch analysis periodically and store last result
+async function fetchPageAnalysis() {
+  await schemaReady;
+  let details: any = null;
+  await withDb(db => {
+    details = queryOne(db, 'SELECT pageId, accessToken FROM fb_page WHERE id = 1');
+  });
+  if (!details || !details.pageId || !details.accessToken) {
+    throw new Error('Facebook page not configured');
+  }
+  const pageId = details.pageId;
+  const token = details.accessToken;
+  const fbBase = 'https://graph.facebook.com/v17.0';
+  try {
+    // Fetch basic page fields
+    const pageResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}?fields=name,about,fan_count,followers_count&access_token=${encodeURIComponent(token)}`);
+    const pageJson = await pageResp.json().catch(() => null);
+    // Fetch recent posts (last 5)
+    const postsResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time&access_token=${encodeURIComponent(token)}`);
+    const postsJson = await postsResp.json().catch(() => null);
+    const summary = { ts: Date.now(), page: pageJson, posts: postsJson };
+    await withDb(db => {
+      const stmt = db.prepare('INSERT INTO fb_analysis (ts, data) VALUES (?, ?)');
+      stmt.run([Math.floor(Date.now() / 1000), JSON.stringify(summary)]);
+      stmt.free && stmt.free();
+      saveDb(db);
+    });
+    return summary;
+  } catch (err) {
+    console.error('fetchPageAnalysis error', err);
+    throw err;
+  }
+}
+
+// Expose analysis endpoints
+router.get('/analysis/latest', async (req, res) => {
+  await schemaReady;
+  let row: any = null;
+  await withDb(db => {
+    row = queryOne(db, 'SELECT ts, data FROM fb_analysis ORDER BY id DESC LIMIT 1');
+  });
+  if (!row) return res.status(404).json({ success: false, message: 'No analysis available' });
+  try {
+    const data = JSON.parse(row.data);
+    return res.json({ success: true, ts: row.ts, data });
+  } catch (err) {
+    return res.json({ success: true, ts: row.ts, data: row.data });
+  }
+});
+
+router.post('/analysis/refresh', async (req, res) => {
+  try {
+    const result = await fetchPageAnalysis();
+    return res.json({ success: true, result });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message || 'Failed to fetch analysis' });
+  }
+});
+
+// Run immediately and then hourly
+(async () => {
+  try {
+    await fetchPageAnalysis().catch(() => null);
+  } catch (e) {
+    // ignore
+  }
+  setInterval(() => {
+    fetchPageAnalysis().catch(err => console.error('scheduled analysis failed', err));
+  }, 1000 * 60 * 60);
+})();
