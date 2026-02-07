@@ -9,10 +9,11 @@ async function parseJsonSafe(res: Response): Promise<any> {
     return res.json();
   }
   const text = await res.text();
+  const snippet = text.slice(0, 1024);
   if (text.trim().startsWith('<')) {
-    throw new Error('API request hit the frontend. Set VITE_API_URL to your backend URL.');
+    throw new Error(`API request likely hit the frontend (HTML). URL: ${res.url} Status: ${res.status}. Response starts with HTML: ${snippet}\n\nHint: set VITE_API_URL to your backend or configure Vite proxy.`);
   }
-  throw new Error('Unexpected API response format.');
+  throw new Error(`Unexpected API response format. URL: ${res.url} Status: ${res.status}. Body start: ${snippet}`);
 }
 
 // Clear all users except default admin (admin only)
