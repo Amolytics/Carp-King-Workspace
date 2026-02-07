@@ -14,11 +14,11 @@ const AnalysisPage: React.FC = () => {
   const fetchLatest = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/facebook/analysis/history?limit=2');
+      const res = await fetch('/api/facebook/analysis/history?limit=12');
       if (!res.ok) throw new Error('No analysis available');
       const json = await res.json();
       if (json.success) {
-        const entries: AnalysisResult[] = (json.entries || []).map((e: any) => ({ ts: e.ts * 1000 || Date.now(), data: e.data }));
+        const entries: AnalysisResult[] = (json.entries || []).map((e: any) => ({ ts: (e.ts || Date.now()) * 1000, data: e.data }));
         setHistory(entries);
         if (entries.length > 0) setAnalysis(entries[0]);
       }
@@ -122,6 +122,17 @@ const AnalysisPage: React.FC = () => {
               );
             })()}
           </div>
+          {/** Charts area: followers sparkline and posts bar chart */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
+            <div style={{ background: '#fff', padding: 12, borderRadius: 6, minWidth: 320 }}>
+              <div style={{ fontSize: 14, color: '#444', marginBottom: 8 }}>Followers (last {history.length} points)</div>
+              <FollowersSparkline history={history} />
+            </div>
+            <div style={{ background: '#fff', padding: 12, borderRadius: 6, minWidth: 320 }}>
+              <div style={{ fontSize: 14, color: '#444', marginBottom: 8 }}>Recent Posts Count</div>
+              <PostsBarChart history={history} />
+            </div>
+          </div>
           <div style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 12, borderRadius: 6 }}>
             <strong>Fetched:</strong> {new Date(analysis.ts).toLocaleString()}
             <pre style={{ marginTop: 8 }}>{JSON.stringify(analysis.data, null, 2)}</pre>
@@ -129,6 +140,47 @@ const AnalysisPage: React.FC = () => {
         </>
       )}
     </div>
+  );
+};
+
+// Simple inline sparkline for followers
+const FollowersSparkline: React.FC<{ history: AnalysisResult[] }> = ({ history }) => {
+  if (!history || history.length === 0) return <div>No data</div>;
+  const points = history.map(h => Number(h.data?.page?.followers_count || h.data?.page?.followers || h.data?.page?.fan_count || 0));
+  const max = Math.max(...points, 1);
+  const min = Math.min(...points, 0);
+  const w = 300, h = 60, padding = 4;
+  const step = (w - padding * 2) / Math.max(1, points.length - 1);
+  const path = points.map((v, i) => {
+    const x = padding + i * step;
+    const y = h - padding - ((v - min) / (max - min || 1)) * (h - padding * 2);
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+  return (
+    <svg width={w} height={h}>
+      <rect x={0} y={0} width={w} height={h} fill="#fff" rx={4} />
+      <path d={path} stroke="#1976d2" strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+};
+
+// Simple bar chart for posts counts
+const PostsBarChart: React.FC<{ history: AnalysisResult[] }> = ({ history }) => {
+  if (!history || history.length === 0) return <div>No data</div>;
+  const counts = history.map(h => Array.isArray(h.data?.posts?.data) ? h.data.posts.data.length : 0).reverse();
+  const w = 300, h = 60, barGap = 4;
+  const barWidth = Math.max(4, (w - (counts.length - 1) * barGap) / counts.length);
+  const max = Math.max(...counts, 1);
+  return (
+    <svg width={w} height={h}>
+      <rect x={0} y={0} width={w} height={h} fill="#fff" rx={4} />
+      {counts.map((c, i) => {
+        const x = i * (barWidth + barGap);
+        const bh = (c / max) * (h - 8);
+        const y = h - bh - 4;
+        return <rect key={i} x={x} y={y} width={barWidth} height={bh} fill="#4caf50" />;
+      })}
+    </svg>
   );
 };
 
