@@ -1,4 +1,21 @@
 @media (max-width: 600px) {
+  .meeting-room-actions .btn,
+  .meeting-room-actions button.btn {
+    width: 48vw !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 6px 2px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+    box-sizing: border-box;
+  }
+  .meeting-room-actions {
+    gap: 4px !important;
+    padding: 0 !important;
+  }
+}
+@media (max-width: 600px) {
   .meeting-room-actions {
     flex-direction: row !important;
     flex-wrap: wrap;
