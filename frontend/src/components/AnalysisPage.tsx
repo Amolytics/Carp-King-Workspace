@@ -76,7 +76,8 @@ const AnalysisPage: React.FC = () => {
     <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <h2 style={{ margin: 0 }}>Analysis</h2>
-        <div style={{ marginLeft: 12 }}>
+        <div style={{ marginLeft: 12, display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={runAnalysisNow} disabled={loading}>Pull</button>
           <button className="btn" onClick={() => fetchLatest(24)} disabled={loading}>Refresh</button>
         </div>
       </div>
