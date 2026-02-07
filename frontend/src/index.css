@@ -478,21 +478,30 @@ a {
   .meeting-room-modal {
     flex-direction: column;
     height: 90vh;
+    width: 100vw !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   .meeting-room-chat,
   .meeting-room-side {
-    width: 100%;
-    min-width: 0;
+    width: 100vw !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
     padding: 4px 2px !important;
     box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   .meeting-room-chatbox {
     height: 36vh;
-    width: 100% !important;
+    width: 100vw !important;
     min-width: 0 !important;
+    max-width: 100vw !important;
     box-sizing: border-box;
+    overflow-x: hidden;
   }
 }
 
