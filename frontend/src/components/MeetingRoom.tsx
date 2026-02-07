@@ -104,11 +104,16 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
           </div>
         </div>
         {/* Right: Chat */}
-        <div className="meeting-room-chat" style={{ flex: 2, background: '#181910', padding: window.innerWidth <= 700 ? 8 : 1, display: 'flex', flexDirection: 'column', minWidth: 0, boxSizing: 'border-box' }}>
-          <div className="meeting-room-title" style={{ fontSize: 20, fontWeight: 700, color: '#ffe066', marginBottom: 8, letterSpacing: 0.5 }}>Meeting Chat</div>
+        <div className="meeting-room-chat" style={{ flex: 2, background: '#181910', padding: window.innerWidth <= 700 ? 1 : 1, display: 'flex', flexDirection: 'column', minWidth: 0, boxSizing: 'border-box' }}>
+          {window.innerWidth > 700 && (
+            <div className="meeting-room-title" style={{ fontSize: 20, fontWeight: 700, color: '#ffe066', marginBottom: 8, letterSpacing: 0.5 }}>Meeting Chat</div>
+          )}
           <div ref={chatRef} className="meeting-room-chatbox" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'transparent', padding: 0, margin: 0, border: 'none' }}>
-            <MeetingChat meeting={meeting} isLocked={chatLocked} />
+            <MeetingChat meeting={meeting} isLocked={chatLocked} showTitle={window.innerWidth <= 700} />
           </div>
+          {window.innerWidth <= 700 && (
+            <div className="meeting-room-title" style={{ fontSize: 18, fontWeight: 700, color: '#ffe066', margin: '8px 0 0 0', letterSpacing: 0.5, textAlign: 'center' }}>Meeting Chat</div>
+          )}
         </div>
       </div>
     </div>
