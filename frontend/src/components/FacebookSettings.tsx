@@ -16,11 +16,16 @@ const FacebookSettings: React.FC = () => {
 
   // On mount, try to load from backend
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/facebook/get-page')
       .then(res => res.json())
       .then(data => {
+        if (cancelled) return;
         if (data.success && data.details) {
           setSaved(data.details);
+          setPageId(data.details.pageId || '');
+          setPageName(data.details.pageName || '');
+          setAccessToken(data.details.accessToken || '');
           localStorage.setItem(STORAGE_KEY, JSON.stringify(data.details));
         } else {
           setSaved(null);
@@ -28,9 +33,11 @@ const FacebookSettings: React.FC = () => {
         }
       })
       .catch(() => {
+        if (cancelled) return;
         setSaved(null);
         localStorage.removeItem(STORAGE_KEY);
       });
+    return () => { cancelled = true; };
   }, []);
 
   if (!user || user.role !== 'admin') return null;
@@ -80,18 +87,7 @@ const FacebookSettings: React.FC = () => {
     }
   };
 
-  if (saved) {
-    return (
-      <div style={{ margin: '2px 0' }}>
-        <div style={{ color: '#ffe066', fontWeight: 600, marginBottom: 1, padding: 0 }}>Current Facebook Page Details:</div>
-        <div style={{ fontSize: 14, marginBottom: 2 }}>Page ID: <b>{saved.pageId}</b></div>
-        <div style={{ fontSize: 14, marginBottom: 2 }}>Page Name: <b>{saved.pageName}</b></div>
-        <div style={{ fontSize: 14, marginBottom: 2 }}>Access Token: <b style={{ fontFamily: 'monospace' }}>{saved.accessToken}</b></div>
-        <button type="button" onClick={handleRemove} style={{ background: '#c00', color: '#fff', fontWeight: 700, borderRadius: 6, padding: '4px 14px', border: 'none', marginTop: 4, cursor: 'pointer' }}>Remove Details</button>
-        {message && <div style={{ color: 'green', marginTop: 2 }}>{message}</div>}
-      </div>
-    );
-  }
+  // Always show the form; if saved details exist, show them above the form and prefill inputs
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
