@@ -11,8 +11,8 @@ const PlannerLayout: React.FC = () => {
   const [saving, setSaving] = useState(false);
   return (
     <>
-      <div className="planner-layout">
-        <div className="panel">
+      <div className="planner-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div className="panel" style={{ flex: '0 0 48%' }}>
           <h2 style={{ marginBottom: 18 }}>Schedule a Post</h2>
           <form className="panel-form">
             <label>Post Content</label>
@@ -65,7 +65,7 @@ const PlannerLayout: React.FC = () => {
             }}>{saving ? 'Saving…' : 'Schedule Post'}</button>
           </form>
         </div>
-        <div className="panel">
+        <div className="panel" style={{ flex: '0 0 48%' }}>
           <h2 style={{ marginBottom: 18 }}>Post Preview</h2>
           <div className="panel-preview">
             {uploadedImageUrl && <img src={uploadedImageUrl} alt="Preview" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 12 }} />}
