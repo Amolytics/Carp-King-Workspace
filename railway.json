@@ -10,8 +10,7 @@
     {
       "name": "frontend",
       "rootDir": "frontend",
-      "image": "ghcr.io/amolytics/carp-king-frontend@sha256:3a23a59479a1f188a13fd42a51c3abbf3265e0e2165ed9c279a2e5c751693f7f",
-      "startCommand": "sh -c \"serve -s dist -l ${PORT:-3000}\""
+      "image": "ghcr.io/amolytics/carp-king-frontend@sha256:3a23a59479a1f188a13fd42a51c3abbf3265e0e2165ed9c279a2e5c751693f7f"
     }
   ]
 }
