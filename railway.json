@@ -10,7 +10,7 @@
     {
       "name": "frontend",
       "rootDir": "frontend",
-      "image": "ghcr.io/amolytics/carp-king-frontend:f6d680e0c4a4bdda08bebe151e1753cb6f205d9a",
+      "image": "ghcr.io/amolytics/carp-king-frontend@sha256:3a23a59479a1f188a13fd42a51c3abbf3265e0e2165ed9c279a2e5c751693f7f",
       "startCommand": "nginx -g 'daemon off;'"
     }
   ]
