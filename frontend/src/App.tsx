@@ -32,12 +32,26 @@ const PAGE_STORAGE_KEY = 'ck.page';
 const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'analysis', 'chat', 'facebook', 'upload']);
 const UNREAD_KEY_PREFIX = 'ck.unread.';
 
-const FB_MOBILE_URL = 'https://m.facebook.com/profile.php?id=61586021865588';
-const FB_DESKTOP_URL = 'https://www.facebook.com/profile.php?id=61586021865588';
+const FB_PAGE_ID = '61586021865588';
+const FB_MOBILE_WEB = `https://m.facebook.com/profile.php?id=${FB_PAGE_ID}`;
+const FB_DESKTOP_URL = `https://www.facebook.com/profile.php?id=${FB_PAGE_ID}`;
 
 function getFacebookUrl() {
   if (typeof window === 'undefined') return FB_DESKTOP_URL;
-  return window.innerWidth <= 900 ? FB_MOBILE_URL : FB_DESKTOP_URL;
+  const ua = navigator.userAgent || '';
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  // Prefer opening the native Facebook app where possible
+  if (isAndroid) {
+    // Android intent URI will attempt to open the Facebook app, falling back to web if not installed
+    return `intent://www.facebook.com/profile.php?id=${FB_PAGE_ID}#Intent;package=com.facebook.katana;scheme=https;end`;
+  }
+  if (isIOS) {
+    // iOS fb:// scheme opens the native app when available
+    return `fb://profile/${FB_PAGE_ID}`;
+  }
+  // Fallback to mobile site for small screens, otherwise desktop site
+  return window.innerWidth <= 900 ? FB_MOBILE_WEB : FB_DESKTOP_URL;
 }
 
 const WelcomePage: React.FC<{ user: any; onNavigate: (page: string) => void; unreadCount: number }> = ({ user, onNavigate, unreadCount }) => (
