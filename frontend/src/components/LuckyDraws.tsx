@@ -122,6 +122,24 @@ export default function LuckyDraws() {
 
   return (
     <div style={{ padding: 12 }}>
+      <h2>Online Visual Pickers</h2>
+      <p>Quick-launch visual pickers (opens in new tab):</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+        {[
+          { title: 'Random.org', url: 'https://www.random.org/' },
+          { title: 'Wooclap Wheel', url: 'https://www.wooclap.com/en/spin-the-wheel/' },
+          { title: 'Wheel of Names', url: 'https://wheelofnames.com/' },
+          { title: 'HeySpinner', url: 'https://heyspinner.com/random-number-wheel' },
+          { title: 'GigaCalculator RNG', url: 'https://www.gigacalculator.com/calculators/random-number-generator.php' },
+          { title: 'PinkyLam Picker', url: 'https://pinkylam.me/playground/random-name-picker/' },
+        ].map((p, idx) => (
+          <div key={idx} style={{ background: '#071018', color: '#fff', padding: 12, borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>{p.title}</div>
+            <button onClick={() => window.open(p.url, '_blank', 'noopener')} style={{ padding: '10px 14px', borderRadius: 8, background: '#ffe066', border: 'none', fontWeight: 700 }}>Open Picker</button>
+          </div>
+        ))}
+      </div>
+
       <h2>Lucky Draw (Snazzy Inline)</h2>
       <p>Six large inline draw stations — paste names/ticket numbers (one per line) or switch to numeric range. Click <strong>Spin</strong> to run a dramatic animated draw.</p>
       <div ref={containerRef as any} style={grid}>
