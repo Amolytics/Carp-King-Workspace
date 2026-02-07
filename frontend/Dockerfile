@@ -11,12 +11,11 @@ RUN npm ci --loglevel verbose
 COPY . .
 RUN npm run build
 
-# Runtime: use nginx to serve static files
+# Runtime: use a small Node server to serve static files and log requests
 FROM node:18-alpine AS runtime
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
-# Install a tiny static file server (serve) and run it. Using a Node runtime
-# ensures `npx`/npm tools are available if Railway injects runtime commands.
-RUN npm install -g serve
-EXPOSE 80
-CMD ["serve", "-s", "dist", "-l", "80"]
+COPY server.js ./server.js
+RUN npm install express@4 --no-save
+EXPOSE 3000
+CMD ["node", "server.js"]
