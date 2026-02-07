@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Slot } from '../types';
 import { getSlots } from '../api';
+import { socket } from '../realtime';
 
 const SlotList: React.FC = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
 
   useEffect(() => {
     getSlots().then(setSlots);
-    const handler = (e: any) => {
+    const windowHandler = (e: any) => {
       try {
         const slot = e?.detail as Slot | undefined;
         if (slot && slot.id) setSlots(prev => [slot, ...prev]);
@@ -15,8 +16,24 @@ const SlotList: React.FC = () => {
         // ignore
       }
     };
-    window.addEventListener('slot:created', handler as EventListener);
-    return () => window.removeEventListener('slot:created', handler as EventListener);
+    const socketCreated = (slot: any) => {
+      try {
+        if (slot && slot.id) setSlots(prev => [slot, ...prev]);
+      } catch (err) {}
+    };
+    const socketPublished = (_payload: any) => {
+      // refresh list on publish
+      getSlots().then(setSlots).catch(() => {});
+    };
+
+    window.addEventListener('slot:created', windowHandler as EventListener);
+    socket.on('slot:created', socketCreated);
+    socket.on('slot:published', socketPublished);
+    return () => {
+      window.removeEventListener('slot:created', windowHandler as EventListener);
+      socket.off('slot:created', socketCreated);
+      socket.off('slot:published', socketPublished);
+    };
   }, []);
 
   if (!slots || slots.length === 0) {

@@ -184,6 +184,8 @@ router.post('/slots', async (req, res) => {
     }
     db.run('INSERT INTO slots (id, data) VALUES (?, ?)', [slot.id, JSON.stringify(slot)]);
     saveDb(db);
+    // notify connected clients of new slot
+    try { emit('slot:created', slot); } catch (e) { console.warn('emit slot:created failed', e); }
     res.json(slot);
   });
 });
