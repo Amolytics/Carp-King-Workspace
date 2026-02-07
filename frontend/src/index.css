@@ -513,30 +513,37 @@ a {
   }
 
   .meeting-room-modal {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     height: 90vh;
     width: 100vw !important;
     min-width: 0 !important;
     max-width: 100vw !important;
     box-sizing: border-box;
     overflow-x: hidden;
+    gap: 0;
   }
 
   .meeting-room-chat,
   .meeting-room-side {
-    width: 100vw !important;
+    flex: 1 1 50vw !important;
+    width: 50vw !important;
     min-width: 0 !important;
-    max-width: 100vw !important;
+    max-width: 50vw !important;
     padding: 4px 2px !important;
     box-sizing: border-box;
     overflow-x: hidden;
+    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .meeting-room-chatbox {
     height: 36vh;
-    width: 100vw !important;
+    width: 100% !important;
     min-width: 0 !important;
-    max-width: 100vw !important;
+    max-width: 100% !important;
     box-sizing: border-box;
     overflow-x: hidden;
   }
