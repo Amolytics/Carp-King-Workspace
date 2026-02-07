@@ -4,7 +4,7 @@ import { addMeetingChat } from '../api';
 import { useAuth } from './AuthContext';
 import { socket } from '../realtime';
 
-const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
+const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeting, isLocked = false }) => {
   const { user } = useAuth();
   const [text, setText] = useState('');
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -36,7 +36,7 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || isLocked) return;
     setLoading(true);
     setError(null);
     try {
@@ -94,8 +94,9 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
             type="text"
             value={text}
             onChange={handleTyping}
-            placeholder="Add a message"
+            placeholder={isLocked ? 'Chat is locked' : 'Add a message'}
             required
+            disabled={isLocked}
             style={{
               flex: 1,
               fontSize: 15,
@@ -103,8 +104,8 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
               border: '1.5px solid #ffe06655',
               padding: '8px 12px',
               marginRight: 8,
-              background: '#fffbe6',
-              color: '#23241a',
+              background: isLocked ? '#2b2b2b' : '#fffbe6',
+              color: isLocked ? '#aaa' : '#23241a',
               outline: 'none',
             }}
             onKeyDown={e => {
@@ -116,7 +117,7 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
           />
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isLocked}
             style={{
               background: '#ffe066',
               color: '#23241a',
@@ -126,7 +127,8 @@ const MeetingChat: React.FC<{ meeting: Meeting }> = ({ meeting }) => {
               padding: '8px 18px',
               border: 'none',
               boxShadow: '0 1px 4px #0002',
-              cursor: 'pointer',
+              cursor: isLocked ? 'not-allowed' : 'pointer',
+              opacity: isLocked ? 0.6 : 1,
             }}
           >
             Send
