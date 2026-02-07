@@ -8,6 +8,16 @@ const SlotList: React.FC = () => {
 
   useEffect(() => {
     getSlots().then(setSlots);
+    const handler = (e: any) => {
+      try {
+        const slot = e?.detail;
+        if (slot && slot.id) setSlots(prev => [slot, ...prev]);
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener('slot:created', handler as EventListener);
+    return () => window.removeEventListener('slot:created', handler as EventListener);
   }, []);
 
   return (

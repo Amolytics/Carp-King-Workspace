@@ -53,6 +53,8 @@ const PlannerLayout: React.FC = () => {
                 setScheduledTime('');
                 setPreviewImage(null);
                 setUploadedImageUrl(null);
+                // notify slot list to update immediately
+                try { window.dispatchEvent(new CustomEvent('slot:created', { detail: slot })); } catch (e) { /* ignore */ }
                 // small UI feedback
                 alert('Scheduled post saved.');
               } catch (err: any) {
