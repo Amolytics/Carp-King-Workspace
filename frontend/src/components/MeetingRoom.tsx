@@ -2,22 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { socket } from '../realtime';
 import MeetingChat from './MeetingChat';
-      <div
-        className="meeting-room-modal"
-        style={{
-          maxWidth: 900,
-          margin: 'auto',
-          borderRadius: 12,
-          boxShadow: '0 2px 16px #000a',
-          background: '#23241a',
-          display: 'flex',
-          flexDirection: window.innerWidth <= 700 ? 'column' : 'row',
-          overflow: 'hidden',
-          padding: 1,
-          gap: window.innerWidth > 700 ? 1 : 0,
-          boxSizing: 'border-box',
-        }}
-      >
 const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
   const [notes, setNotes] = useState(meeting.notes || '');
   const [actions, setActions] = useState(meeting.actionItems.join(', '));
