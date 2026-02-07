@@ -63,7 +63,7 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
             <div style={{ fontSize: 18, fontWeight: 600, color: '#ffe066', marginBottom: 4 }}>Action Items</div>
             <textarea value={actions} onChange={e => setActions(e.target.value)} style={{ width: '100%', minHeight: 60, borderRadius: 8, background: '#181910', color: '#ffe066', border: '1.5px solid #ffe06655', fontSize: 15, padding: 10, resize: 'vertical' }} />
           </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap', paddingRight: 3 }}>
             <button onClick={handleDownloadChat} className="btn" style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, borderRadius: 8, padding: '8px 18px', border: 'none', boxShadow: '0 1px 4px #0002' }}>Download Chat</button>
             {user?.role === 'admin' && (
               <>
