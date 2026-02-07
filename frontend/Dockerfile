@@ -6,8 +6,8 @@ ENV VITE_API_URL=${VITE_API_URL}
 COPY package*.json ./
 # install build tools required by some native deps (esbuild, node-gyp, etc.)
 # then install dependencies
-RUN apk add --no-cache build-base python3 git && \
-	npm ci --silent
+RUN apk add --no-cache build-base python3 git
+RUN npm ci --loglevel verbose
 COPY . .
 RUN npm run build
 
