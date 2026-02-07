@@ -162,6 +162,35 @@ const AnalysisPage: React.FC = () => {
               <div>Posts: <strong style={{ color: '#fff' }}>{Array.isArray(analysis.data?.posts?.data) ? analysis.data.posts.data.length : 0}</strong></div>
             </div>
           </div>
+
+          {/* Recent posts list */}
+          <div style={{ marginTop: 12 }}>
+            <h3 style={{ margin: '8px 0', color: '#ffe066' }}>Recent Posts</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(Array.isArray(analysis.data?.posts?.data) ? analysis.data.posts.data : []).map((p: any) => {
+                const id = String(p.id || '');
+                const created = p.created_time ? new Date(p.created_time).toLocaleString() : '';
+                const msg = (p.message || '').slice(0, 400);
+                const likes = Number(p?.reactions?.summary?.total_count || 0);
+                const comments = Number(p?.comments?.summary?.total_count || 0);
+                const shares = Number(p?.shares?.count || 0);
+                return (
+                  <div key={id} style={{ background: '#1e2018', padding: 10, borderRadius: 8, color: '#fff', boxShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontSize: 13, color: '#ffd' }}>{created}</div>
+                      <a href={`https://www.facebook.com/${id}`} target="_blank" rel="noreferrer" style={{ color: '#7fb3ff', textDecoration: 'underline', fontSize: 13 }}>View on Facebook</a>
+                    </div>
+                    <div style={{ marginTop: 6, color: '#ddd', fontSize: 15 }}>{msg}</div>
+                    <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 13, color: '#ffe066' }}>
+                      <div>👍 <strong style={{ color: '#fff' }}>{likes}</strong></div>
+                      <div>💬 <strong style={{ color: '#fff' }}>{comments}</strong></div>
+                      <div>🔁 <strong style={{ color: '#fff' }}>{shares}</strong></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
     </div>
