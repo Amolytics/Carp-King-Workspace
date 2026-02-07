@@ -20,8 +20,9 @@ console.log('Using BACKEND_URL:', JSON.stringify(RAW_BACKEND_URL));
 app.use('/api', (req, res) => {
   try {
     const cleanBase = (BACKEND_URL || 'http://localhost:4000').replace(/\s+/g, '');
-    const target = new URL(req.originalUrl, cleanBase);
-    console.log('Proxy target:', target.href);
+    const targetHref = cleanBase.replace(/\/$/, '') + req.originalUrl;
+    const target = new URL(targetHref);
+    console.log('Proxy target:', target.href, ' (constructed from)', JSON.stringify(cleanBase), req.originalUrl);
     const lib = target.protocol === 'https:' ? https : http;
     const options = {
       method: req.method,
