@@ -52,13 +52,13 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
   };
 
   return (
-    <div style={{ border: '1px solid #ccc', margin: 8, padding: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h4 style={{ margin: 0 }}>Meeting Chat</h4>
+    <div style={{ width: '100%', height: '100%', margin: 0, padding: 0, border: 'none', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'stretch' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, padding: 0 }}>
+        <h4 style={{ margin: 0, padding: 0 }}>Meeting Chat</h4>
         {user?.role === 'admin' && (
           <button
             onClick={() => setChat([])}
-            style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, fontSize: 13, borderRadius: 6, padding: '4px 14px', border: 'none', boxShadow: '0 1px 4px #0002', cursor: 'pointer', marginLeft: 12 }}
+            style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, fontSize: 13, borderRadius: 6, padding: '4px 10px', border: 'none', boxShadow: '0 1px 4px #0002', cursor: 'pointer', marginLeft: 8 }}
           >
             Clear Chat
           </button>
@@ -66,29 +66,21 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
       </div>
       {/* Typing indicator */}
       {typingUsers.length > 0 && (
-        <div style={{ color: '#ffd54f', fontSize: 14, marginBottom: 4 }}>
+        <div style={{ color: '#ffd54f', fontSize: 14, margin: 0, padding: 0 }}>
           {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
         </div>
       )}
-      <div style={{
-        height: 220,
-        overflowY: 'auto',
-        background: '#23241a',
-        borderRadius: 8,
-        padding: 8,
-        margin: '12px 0',
-        border: '1.5px solid #ffe06633',
-      }}>
-        <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+      <div style={{ flex: 1, width: '100%', height: '100%', overflowY: 'auto', background: '#23241a', borderRadius: 0, padding: 0, margin: 0, border: 'none', boxSizing: 'border-box' }}>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', width: '100%' }}>
           {chat.map(c => (
-            <li key={c.id} style={{ marginBottom: 8 }}><b>{c.userId}</b>: {c.text} <span style={{ fontSize: 10, color: '#888' }}>{c.createdAt}</span></li>
+            <li key={c.id} style={{ marginBottom: 8, wordBreak: 'break-word' }}><b>{c.userId}</b>: {c.text} <span style={{ fontSize: 10, color: '#888' }}>{c.createdAt}</span></li>
           ))}
         </ul>
       </div>
       {user && (
         <form
           onSubmit={handleSubmit}
-          style={{ display: 'flex', width: '100%', marginTop: 8 }}
+          style={{ display: 'flex', width: '100%', margin: 0, padding: 0 }}
         >
           <input
             type="text"
@@ -100,13 +92,15 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
             style={{
               flex: 1,
               fontSize: 15,
-              borderRadius: 6,
+              borderRadius: 0,
               border: '1.5px solid #ffe06655',
-              padding: '8px 12px',
-              marginRight: 8,
+              padding: '8px 8px',
+              marginRight: 4,
               background: isLocked ? '#2b2b2b' : '#fffbe6',
               color: isLocked ? '#aaa' : '#23241a',
               outline: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
             }}
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -123,19 +117,21 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
               color: '#23241a',
               fontWeight: 700,
               fontSize: 15,
-              borderRadius: 6,
-              padding: '8px 18px',
+              borderRadius: 0,
+              padding: '8px 10px',
               border: 'none',
               boxShadow: '0 1px 4px #0002',
               cursor: isLocked ? 'not-allowed' : 'pointer',
               opacity: isLocked ? 0.6 : 1,
+              width: 'auto',
+              minWidth: 60,
             }}
           >
             Send
           </button>
         </form>
       )}
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {error && <div style={{ color: 'red', margin: 0, padding: 0 }}>{error}</div>}
     </div>
   );
 };
