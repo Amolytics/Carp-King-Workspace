@@ -4,6 +4,13 @@ import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'fb-page-details';
 
+// Hardcoded page details to autofill and persist (replace with real values)
+const HARDCODED_PAGE = {
+  pageId: 'YOUR_PAGE_ID_HERE',
+  pageName: 'YOUR_PAGE_NAME_HERE',
+  accessToken: 'YOUR_LONG_PAGE_ACCESS_TOKEN_HERE'
+};
+
 const FacebookSettings: React.FC = () => {
   const { user } = useAuth();
   const [pageId, setPageId] = useState('');
@@ -30,6 +37,28 @@ const FacebookSettings: React.FC = () => {
         } else {
           setSaved(null);
           localStorage.removeItem(STORAGE_KEY);
+          // If hardcoded values are provided, prefill and auto-save them
+          if (HARDCODED_PAGE.pageId && HARDCODED_PAGE.accessToken && HARDCODED_PAGE.pageId !== 'YOUR_PAGE_ID_HERE') {
+            setPageId(HARDCODED_PAGE.pageId);
+            setPageName(HARDCODED_PAGE.pageName || '');
+            setAccessToken(HARDCODED_PAGE.accessToken);
+            const details = {
+              pageId: HARDCODED_PAGE.pageId,
+              pageName: HARDCODED_PAGE.pageName,
+              accessToken: HARDCODED_PAGE.accessToken
+            };
+            // Persist immediately
+            fetch('/api/facebook/set-page', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(details)
+            }).then(() => {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(details));
+              setSaved(details);
+            }).catch(() => {
+              // ignore
+            });
+          }
         }
       })
       .catch(() => {
@@ -87,10 +116,60 @@ const FacebookSettings: React.FC = () => {
     }
   };
 
+  const handleOpenPage = () => {
+    const id = pageId || (saved && saved.pageId) || HARDCODED_PAGE.pageId;
+    if (!id) return;
+    // Try deep link then fallback
+    const native = `fb://page/${id}`;
+    const web = `https://www.facebook.com/${id}`;
+    window.location.href = native;
+    setTimeout(() => { window.open(web, '_blank'); }, 500);
+  };
+
+  const handlePullStats = async () => {
+    setLoading(true);
+    setError(null);
+    setMessage('Pulling latest stats...');
+    try {
+      const res = await fetch('/api/facebook/analysis/refresh', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to pull');
+      setMessage('Stats refreshed.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to pull stats');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [postMsg, setPostMsg] = useState('');
+  const handlePostNow = async () => {
+    if (!postMsg.trim()) return setError('Enter a message to post.');
+    setLoading(true);
+    setError(null);
+    setMessage('Posting...');
+    try {
+      const res = await fetch('/api/facebook/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: postMsg })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Post failed');
+      setMessage('Posted successfully.');
+      setPostMsg('');
+    } catch (err: any) {
+      setError(err.message || 'Post failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Always show the form; if saved details exist, show them above the form and prefill inputs
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ color: '#ffe066', fontWeight: 600, marginBottom: 2 }}>Enter Facebook Page Details</div>
       <input
         type="text"
@@ -119,7 +198,21 @@ const FacebookSettings: React.FC = () => {
       <button type="submit" disabled={loading} style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, borderRadius: 6, padding: '4px 14px', border: 'none', marginTop: 4, cursor: 'pointer' }}>Save</button>
       {message && <div style={{ color: 'green', marginTop: 2 }}>{message}</div>}
       {error && <div style={{ color: 'red', marginTop: 2 }}>{error}</div>}
-    </form>
+      </form>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={handleOpenPage} style={{ background: '#2b6df6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>Open Page</button>
+        <button onClick={handlePullStats} disabled={loading} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>Pull Stats</button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ color: '#ffe066', fontWeight: 600 }}>Post to Page</div>
+        <textarea value={postMsg} onChange={e => setPostMsg(e.target.value)} placeholder="Message to post" style={{ minHeight: 80, padding: 8, borderRadius: 6, background: '#23241a', color: '#ffe066', border: '1px solid #ffe06655' }} />
+        <div>
+          <button onClick={handlePostNow} disabled={loading} style={{ background: '#ff7b7b', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>Post Now</button>
+        </div>
+      </div>
+    </div>
   );
 };
 
