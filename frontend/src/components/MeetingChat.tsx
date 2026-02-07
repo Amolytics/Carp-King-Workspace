@@ -54,34 +54,61 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
   return (
     <div style={{ width: '100%', height: '100%', margin: 0, padding: 0, border: 'none', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'stretch' }}>
       {/* Chat area */}
-      <div style={{ flex: 1, width: '100%', height: '100%', overflowY: 'auto', background: 'transparent', borderRadius: 0, padding: 0, margin: 0, border: 'none', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div
+        style={{
+          flex: 1,
+          width: '100%',
+          height: '100%',
+          overflowY: 'auto',
+          background: 'transparent',
+          borderRadius: 0,
+          padding: window.innerWidth <= 700 ? 0 : 0,
+          margin: 0,
+          border: 'none',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0,
+        }}
+      >
         {chat.length === 0 && (
           <div style={{ color: '#ffe06699', textAlign: 'center', fontStyle: 'italic', marginTop: 32 }}>No messages yet.</div>
         )}
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', width: '100%', display: 'flex', flexDirection: 'column', gap: 0 }}>
           {chat.map((c, i) => (
-            <li key={c.id} style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10, width: '100%' }}>
-              <div style={{
-                background: c.userId === user?.id ? '#ffe066' : '#23241a',
-                color: c.userId === user?.id ? '#23241a' : '#ffe066',
-                borderRadius: 16,
-                padding: '10px 16px',
-                maxWidth: '70%',
-                minWidth: 40,
-                fontSize: 15,
-                fontWeight: 500,
-                boxShadow: c.userId === user?.id ? '0 2px 8px #ffe06633' : '0 2px 8px #0002',
-                marginLeft: c.userId === user?.id ? 'auto' : 0,
-                marginRight: c.userId === user?.id ? 0 : 'auto',
-                wordBreak: 'break-word',
-                position: 'relative',
+            <li
+              key={c.id}
+              style={{
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: c.userId === user?.id ? 'flex-end' : 'flex-start',
-              }}>
-                <span style={{ fontWeight: 700, fontSize: 13, opacity: 0.85 }}>{c.userId}</span>
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                marginBottom: window.innerWidth <= 700 ? 4 : 6,
+                width: '100%',
+              }}
+            >
+              <div
+                style={{
+                  background: c.userId === user?.id ? '#ffe066' : '#23241a',
+                  color: c.userId === user?.id ? '#23241a' : '#ffe066',
+                  borderRadius: 8,
+                  padding: window.innerWidth <= 700 ? '6px 8px' : '7px 12px',
+                  maxWidth: window.innerWidth <= 700 ? '90%' : '70%',
+                  minWidth: 24,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  boxShadow: c.userId === user?.id ? '0 1px 4px #ffe06633' : '0 1px 4px #0002',
+                  marginLeft: c.userId === user?.id ? 'auto' : 0,
+                  marginRight: c.userId === user?.id ? 0 : 'auto',
+                  wordBreak: 'break-word',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: c.userId === user?.id ? 'flex-end' : 'flex-start',
+                }}
+              >
+                <span style={{ fontWeight: 700, fontSize: 11, opacity: 0.85 }}>{c.userId}</span>
                 <span>{c.text}</span>
-                <span style={{ fontSize: 11, color: c.userId === user?.id ? '#7a6c1a' : '#ffe06699', marginTop: 2, alignSelf: 'flex-end' }}>{c.createdAt}</span>
+                <span style={{ fontSize: 9, color: c.userId === user?.id ? '#7a6c1a' : '#ffe06699', marginTop: 1, alignSelf: 'flex-end' }}>{c.createdAt}</span>
               </div>
             </li>
           ))}
@@ -95,7 +122,13 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
       {user && (
         <form
           onSubmit={handleSubmit}
-          style={{ display: 'flex', width: '100%', margin: '12px 0 0 0', padding: 0, gap: 8 }}
+          style={{
+            display: 'flex',
+            width: '100%',
+            margin: window.innerWidth <= 700 ? '4px 0 0 0' : '6px 0 0 0',
+            padding: 0,
+            gap: window.innerWidth <= 700 ? 4 : 6,
+          }}
         >
           <input
             type="text"
@@ -106,10 +139,10 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
             disabled={isLocked}
             style={{
               flex: 1,
-              fontSize: 15,
-              borderRadius: 8,
-              border: '1.5px solid #ffe06655',
-              padding: '10px 14px',
+              fontSize: window.innerWidth <= 700 ? 12 : 14,
+              borderRadius: 5,
+              border: '1px solid #ffe06655',
+              padding: window.innerWidth <= 700 ? '6px 7px' : '7px 10px',
               background: isLocked ? '#2b2b2b' : '#fffbe6',
               color: isLocked ? '#aaa' : '#23241a',
               outline: 'none',
@@ -130,15 +163,15 @@ const MeetingChat: React.FC<{ meeting: Meeting; isLocked?: boolean }> = ({ meeti
               background: '#ffe066',
               color: '#23241a',
               fontWeight: 700,
-              fontSize: 15,
-              borderRadius: 8,
-              padding: '10px 18px',
+              fontSize: window.innerWidth <= 700 ? 12 : 14,
+              borderRadius: 5,
+              padding: window.innerWidth <= 700 ? '6px 8px' : '7px 12px',
               border: 'none',
               boxShadow: '0 1px 4px #0002',
               cursor: isLocked ? 'not-allowed' : 'pointer',
               opacity: isLocked ? 0.6 : 1,
               width: 'auto',
-              minWidth: 60,
+              minWidth: window.innerWidth <= 700 ? 36 : 48,
             }}
           >
             Send

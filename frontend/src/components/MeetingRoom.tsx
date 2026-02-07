@@ -48,35 +48,61 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
 
   return (
     <div className="meeting-room-overlay" style={{ background: 'rgba(30,32,24,0.98)', minHeight: '100vh', padding: 0 }}>
-      <div className="meeting-room-modal" style={{ maxWidth: 900, margin: 'auto', borderRadius: 16, boxShadow: '0 4px 32px #000a', background: '#23241a', display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
+      <div
+        className="meeting-room-modal"
+        style={{
+          maxWidth: 900,
+          margin: 'auto',
+          borderRadius: 12,
+          boxShadow: '0 2px 16px #000a',
+          background: '#23241a',
+          display: 'flex',
+          flexDirection: window.innerWidth <= 700 ? 'column' : 'row',
+          overflow: 'hidden',
+          padding: 0,
+        }}
+      >
         {/* Left: Info & Notes */}
-        <div className="meeting-room-side" style={{ flex: 1, background: '#23241a', padding: 32, display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1.5px solid #ffe06622', minWidth: 0 }}>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#ffe066', marginBottom: 6, letterSpacing: 0.5 }}>Agenda</div>
-            <div style={{ fontSize: 16, color: '#ffe066cc', fontWeight: 500 }}>{meeting.agenda}</div>
+        <div
+          className="meeting-room-side"
+          style={{
+            flex: 1,
+            background: '#23241a',
+            padding: window.innerWidth <= 700 ? 8 : 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: window.innerWidth <= 700 ? 6 : 12,
+            borderRight: window.innerWidth <= 700 ? 'none' : '1px solid #ffe06622',
+            borderBottom: window.innerWidth <= 700 ? '1px solid #ffe06622' : 'none',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#ffe066', marginBottom: 4, letterSpacing: 0.5 }}>Agenda</div>
+            <div style={{ fontSize: 15, color: '#ffe066cc', fontWeight: 500 }}>{meeting.agenda}</div>
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: '#ffe066', marginBottom: 4 }}>Notes</div>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} style={{ width: '100%', minHeight: 80, borderRadius: 8, background: '#181910', color: '#ffe066', border: '1.5px solid #ffe06655', fontSize: 15, padding: 10, resize: 'vertical' }} />
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#ffe066', marginBottom: 2 }}>Notes</div>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} style={{ width: '100%', minHeight: 60, borderRadius: 6, background: '#181910', color: '#ffe066', border: '1px solid #ffe06655', fontSize: 14, padding: 7, resize: 'vertical' }} />
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: '#ffe066', marginBottom: 4 }}>Action Items</div>
-            <textarea value={actions} onChange={e => setActions(e.target.value)} style={{ width: '100%', minHeight: 60, borderRadius: 8, background: '#181910', color: '#ffe066', border: '1.5px solid #ffe06655', fontSize: 15, padding: 10, resize: 'vertical' }} />
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#ffe066', marginBottom: 2 }}>Action Items</div>
+            <textarea value={actions} onChange={e => setActions(e.target.value)} style={{ width: '100%', minHeight: 40, borderRadius: 6, background: '#181910', color: '#ffe066', border: '1px solid #ffe06655', fontSize: 14, padding: 7, resize: 'vertical' }} />
           </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-            <button onClick={handleDownloadChat} className="btn" style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, borderRadius: 8, padding: '8px 18px', border: 'none', boxShadow: '0 1px 4px #0002' }}>Download Chat</button>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            <button onClick={handleDownloadChat} className="btn" style={{ background: '#ffe066', color: '#23241a', fontWeight: 700, borderRadius: 6, padding: '6px 12px', border: 'none', boxShadow: '0 1px 4px #0002' }}>Download Chat</button>
             {user?.role === 'admin' && (
               <>
-                <button onClick={handleLockUnlockChat} className={`btn ${chatLocked ? 'btn-danger' : ''}`} style={{ borderRadius: 8 }}>{chatLocked ? 'Unlock Chat' : 'Lock Chat'}</button>
-                <button onClick={handleArchive} className={`btn ${archived ? 'btn-secondary' : ''}`} style={{ borderRadius: 8 }} disabled={archived}>Archive</button>
-                <button onClick={() => { socket.emit('meeting:end', { meetingId: meeting.id }); onClose(); }} className="btn btn-danger" style={{ borderRadius: 8 }}>End Meeting</button>
+                <button onClick={handleLockUnlockChat} className={`btn ${chatLocked ? 'btn-danger' : ''}`} style={{ borderRadius: 6, padding: '6px 12px' }}>{chatLocked ? 'Unlock Chat' : 'Lock Chat'}</button>
+                <button onClick={handleArchive} className={`btn ${archived ? 'btn-secondary' : ''}`} style={{ borderRadius: 6, padding: '6px 12px' }} disabled={archived}>Archive</button>
+                <button onClick={() => { socket.emit('meeting:end', { meetingId: meeting.id }); onClose(); }} className="btn btn-danger" style={{ borderRadius: 6, padding: '6px 12px' }}>End Meeting</button>
               </>
             )}
           </div>
         </div>
         {/* Right: Chat */}
-        <div className="meeting-room-chat" style={{ flex: 2, background: '#181910', padding: 32, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div className="meeting-room-title" style={{ fontSize: 22, fontWeight: 700, color: '#ffe066', marginBottom: 12, letterSpacing: 0.5 }}>Meeting Chat</div>
+        <div className="meeting-room-chat" style={{ flex: 2, background: '#181910', padding: 16, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div className="meeting-room-title" style={{ fontSize: 20, fontWeight: 700, color: '#ffe066', marginBottom: 8, letterSpacing: 0.5 }}>Meeting Chat</div>
           <div ref={chatRef} className="meeting-room-chatbox" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'transparent', padding: 0, margin: 0, border: 'none' }}>
             <MeetingChat meeting={meeting} isLocked={chatLocked} />
           </div>
