@@ -9,6 +9,8 @@ const PlannerLayout: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   return (
     <>
       <div className="planner-layout" style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -45,6 +47,8 @@ const PlannerLayout: React.FC = () => {
             )}
             <button type="button" className="btn" style={{ width: '100%', fontSize: 18, marginTop: 8 }} disabled={saving} onClick={async () => {
               setSaving(true);
+              setSaveError(null);
+              setSaveSuccess(null);
               const imageUrl = uploadedImageUrl || previewImage || undefined;
               try {
                 const slot = await addSlot({ imageUrl: imageUrl || '', content: postContent, scheduledAt: scheduledTime || '' });
@@ -53,16 +57,19 @@ const PlannerLayout: React.FC = () => {
                 setScheduledTime('');
                 setPreviewImage(null);
                 setUploadedImageUrl(null);
-                // notify slot list to update immediately
+                // notify slot list to update immediately (after successful save)
                 try { window.dispatchEvent(new CustomEvent('slot:created', { detail: slot })); } catch (e) { /* ignore */ }
-                // small UI feedback
-                alert('Scheduled post saved.');
+                setSaveSuccess('Scheduled post saved.');
+                // auto-clear success after a short time
+                setTimeout(() => setSaveSuccess(null), 4000);
               } catch (err: any) {
-                alert('Failed to schedule post: ' + (err?.message || String(err)));
+                setSaveError(err?.message || String(err));
               } finally {
                 setSaving(false);
               }
             }}>{saving ? 'Saving…' : 'Schedule Post'}</button>
+            {saveSuccess && <div style={{ marginTop: 8, color: '#7fff7f' }}>{saveSuccess}</div>}
+            {saveError && <div style={{ marginTop: 8, color: '#ff7b7b' }}>{saveError}</div>}
           </form>
         </div>
         <div className="panel" style={{ flex: '0 0 48%' }}>
