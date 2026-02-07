@@ -8,6 +8,7 @@ const PlannerLayout: React.FC = () => {
   const [scheduledTime, setScheduledTime] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   return (
     <>
       <div className="planner-layout">
@@ -42,7 +43,8 @@ const PlannerLayout: React.FC = () => {
                 <button type="button" className="btn btn-ghost" style={{ marginTop: 6 }} onClick={() => setUploadedImageUrl(null)}>Remove</button>
               </div>
             )}
-            <button type="button" className="btn" style={{ width: '100%', fontSize: 18, marginTop: 8 }} onClick={async () => {
+            <button type="button" className="btn" style={{ width: '100%', fontSize: 18, marginTop: 8 }} disabled={saving} onClick={async () => {
+              setSaving(true);
               const imageUrl = uploadedImageUrl || previewImage || undefined;
               try {
                 const slot = await addSlot({ imageUrl: imageUrl || '', content: postContent, scheduledAt: scheduledTime || '' });
@@ -51,11 +53,14 @@ const PlannerLayout: React.FC = () => {
                 setScheduledTime('');
                 setPreviewImage(null);
                 setUploadedImageUrl(null);
+                // small UI feedback
                 alert('Scheduled post saved.');
               } catch (err: any) {
                 alert('Failed to schedule post: ' + (err?.message || String(err)));
+              } finally {
+                setSaving(false);
               }
-            }}>Schedule Post</button>
+            }}>{saving ? 'Saving…' : 'Schedule Post'}</button>
           </form>
         </div>
         <div className="panel">
