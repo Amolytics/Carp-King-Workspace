@@ -174,17 +174,27 @@ const AnalysisPage: React.FC = () => {
                 const likes = Number(p?.reactions?.summary?.total_count || 0);
                 const comments = Number(p?.comments?.summary?.total_count || 0);
                 const shares = Number(p?.shares?.count || 0);
+                const thumb = p.full_picture || p.picture || p.attachments?.data?.[0]?.media?.image?.src || p.attachments?.data?.[0]?.media?.image?.url || null;
                 return (
                   <div key={id} style={{ background: '#1e2018', padding: 10, borderRadius: 8, color: '#fff', boxShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontSize: 13, color: '#ffd' }}>{created}</div>
-                      <a href={`https://www.facebook.com/${id}`} target="_blank" rel="noreferrer" style={{ color: '#7fb3ff', textDecoration: 'underline', fontSize: 13 }}>View on Facebook</a>
-                    </div>
-                    <div style={{ marginTop: 6, color: '#ddd', fontSize: 15 }}>{msg}</div>
-                    <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 13, color: '#ffe066' }}>
-                      <div>👍 <strong style={{ color: '#fff' }}>{likes}</strong></div>
-                      <div>💬 <strong style={{ color: '#fff' }}>{comments}</strong></div>
-                      <div>🔁 <strong style={{ color: '#fff' }}>{shares}</strong></div>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      {thumb ? (
+                        <img src={thumb} alt="thumb" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, flex: '0 0 80px' }} />
+                      ) : (
+                        <div style={{ width: 80, height: 80, background: '#111307', borderRadius: 6, flex: '0 0 80px' }} />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                          <div style={{ fontSize: 13, color: '#ffd' }}>{created}</div>
+                          <a href={`https://www.facebook.com/${id}`} target="_blank" rel="noreferrer" style={{ color: '#7fb3ff', textDecoration: 'underline', fontSize: 13 }}>View on Facebook</a>
+                        </div>
+                        <div style={{ marginTop: 6, color: '#ddd', fontSize: 15 }}>{msg}</div>
+                        <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 13, color: '#ffe066' }}>
+                          <div>👍 <strong style={{ color: '#fff' }}>{likes}</strong></div>
+                          <div>💬 <strong style={{ color: '#fff' }}>{comments}</strong></div>
+                          <div>🔁 <strong style={{ color: '#fff' }}>{shares}</strong></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

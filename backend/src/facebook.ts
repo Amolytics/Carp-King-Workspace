@@ -231,8 +231,8 @@ async function fetchPageAnalysis() {
     const pageResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}?fields=name,about,fan_count,followers_count&access_token=${encodeURIComponent(token)}`);
     const pageJson = await pageResp.json().catch(() => null);
     // Fetch recent posts (last 5)
-    // Request summary counts for reactions and comments, and shares count when available
-    const postsResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time,reactions.summary(true).limit(0),comments.summary(true).limit(0),shares&access_token=${encodeURIComponent(token)}`);
+    // Request summary counts for reactions and comments, shares, and include thumbnails/attachments
+    const postsResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time,full_picture,attachments{media,media_type,url,subattachments{media}},reactions.summary(true).limit(0),comments.summary(true).limit(0),shares&access_token=${encodeURIComponent(token)}`);
     const postsJson = await postsResp.json().catch(() => null);
     const summary = { ts: Date.now(), page: pageJson, posts: postsJson };
     await withDb(db => {
