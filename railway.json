@@ -6,5 +6,12 @@
       "buildCommand": "npm install && npm run build",
       "startCommand": "npm run start"
     }
+    ,
+    {
+      "name": "frontend",
+      "rootDir": "frontend",
+      "buildCommand": "docker build -f frontend/Dockerfile --build-arg VITE_API_URL=\"$VITE_API_URL\" -t carp-king-frontend:latest frontend/",
+      "startCommand": "nginx -g 'daemon off;'"
+    }
   ]
 }
