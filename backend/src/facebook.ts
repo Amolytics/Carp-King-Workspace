@@ -62,6 +62,28 @@ async function loadCredentialsFromFiles() {
   }
 }
 
+// Ensure credentials are loaded on module import/startup
+loadCredentialsFromFiles().catch(err => console.warn('loadCredentialsFromFiles error', err));
+
+// Status endpoint: reports whether page credentials exist and token appears valid
+router.get('/status', async (req, res) => {
+  await schemaReady;
+  let details: any = null;
+  await withDb(db => {
+    details = queryOne(db, 'SELECT pageId, pageName, accessToken FROM fb_page WHERE id = 1');
+  });
+  if (!details) return res.json({ connected: false, message: 'No page configured' });
+  try {
+    const fbBase = 'https://graph.facebook.com/v17.0';
+    const resp = await fetch(`${fbBase}/${encodeURIComponent(details.pageId)}?fields=id,name&access_token=${encodeURIComponent(details.accessToken)}`);
+    const j = await resp.json().catch(() => null);
+    if (!resp.ok) return res.json({ connected: false, details: j });
+    return res.json({ connected: true, page: j });
+  } catch (err) {
+    return res.json({ connected: false, message: 'Validation failed', error: String(err) });
+  }
+});
+
 // Set Facebook Page credentials (admin only)
 router.post('/set-page', async (req, res) => {
   await schemaReady;
