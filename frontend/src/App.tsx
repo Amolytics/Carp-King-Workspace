@@ -17,7 +17,6 @@ import AnalysisPage from './components/AnalysisPage';
 import MeetingsPage from './MeetingsPage';
 import LogoutButton from './components/LogoutButton';
 import AdminPanel from './components/AdminPanel';
-import RandomSelectors from './components/RandomSelectors';
 import RaffleDraws from './components/RaffleDraws';
 import { socket } from './realtime';
 
@@ -31,7 +30,7 @@ const PAGES = [
 ];
 
 const PAGE_STORAGE_KEY = 'ck.page';
-const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'analysis', 'chat', 'facebook', 'upload', 'randoms', 'raffles']);
+const ALLOWED_PAGES = new Set(['welcome', 'slots', 'meetings', 'analysis', 'chat', 'facebook', 'upload', 'raffles']);
 const UNREAD_KEY_PREFIX = 'ck.unread.';
 
 const FB_PAGE_ID = '61586021865588';
@@ -177,7 +176,6 @@ const MainApp: React.FC = () => {
             {user.role === 'admin' && (
               <button onClick={() => setPage('upload')} className="btn btn-nav">Admin</button>
             )}
-            <button onClick={() => setPage('randoms')} className="btn btn-nav">Randoms</button>
             <button onClick={() => setPage('raffles')} className="btn btn-nav">Raffles</button>
           </div>
           <button
@@ -213,7 +211,6 @@ const MainApp: React.FC = () => {
           {user.role === 'admin' && (
             <button onClick={() => { setPage('upload'); setNavOpen(false); }} className="btn btn-nav">Admin</button>
           )}
-          <button onClick={() => { setPage('randoms'); setNavOpen(false); }} className="btn btn-nav">Randoms</button>
           <button onClick={() => { setPage('raffles'); setNavOpen(false); }} className="btn btn-nav">Raffles</button>
           <button className="btn btn-danger" onClick={() => setNavOpen(false)}>Dismiss</button>
         </div>
@@ -236,7 +233,6 @@ const MainApp: React.FC = () => {
           {page === 'analysis' && <AnalysisPage />}
           {page === 'slots' && <PlannerLayout />}
           {page === 'meetings' && <MeetingsPage />}
-          {page === 'randoms' && <RandomSelectors />}
           {page === 'raffles' && <RaffleDraws />}
         </div>
       </div>
