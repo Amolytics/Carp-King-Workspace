@@ -145,8 +145,8 @@ const AnalysisPage: React.FC = () => {
           {/** Charts area: followers sparkline and posts bar chart */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 220, flex: '1 1 320px', color: '#ffe066' }}>
-              <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Followers (last {history.length} points)</div>
-              <FollowersSparkline history={history} />
+                <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Trends (last {history.length} points)</div>
+                  <MultiMetricChart history={history} />
             </div>
             <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 220, flex: '1 1 320px', color: '#ffe066' }}>
               <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Recent Posts Count</div>
@@ -208,24 +208,63 @@ const AnalysisPage: React.FC = () => {
   );
 };
 
-// Simple inline sparkline for followers
-const FollowersSparkline: React.FC<{ history: AnalysisResult[] }> = ({ history }) => {
+// Multi-metric line chart for trends: followers, fans, likes, comments, shares
+const MultiMetricChart: React.FC<{ history: AnalysisResult[] }> = ({ history }) => {
   if (!history || history.length === 0) return <div>No data</div>;
-  const points = history.map(h => Number(h.data?.page?.followers_count || h.data?.page?.followers || h.data?.page?.fan_count || 0));
-  const max = Math.max(...points, 1);
-  const min = Math.min(...points, 0);
-  const viewW = 300, viewH = 60, padding = 6;
-  const step = (viewW - padding * 2) / Math.max(1, points.length - 1);
-  const path = points.map((v, i) => {
+
+  // Build series
+  const followers = history.map(h => Number(h.data?.page?.followers_count || h.data?.page?.followers || h.data?.page?.fan_count || 0));
+  const fans = history.map(h => Number(h.data?.page?.fan_count || 0));
+  const likes = history.map(h => {
+    const arr = Array.isArray(h.data?.posts?.data) ? h.data.posts.data : [];
+    return arr.reduce((s: number, p: any) => s + (Number(p?.reactions?.summary?.total_count || 0)), 0);
+  });
+  const comments = history.map(h => {
+    const arr = Array.isArray(h.data?.posts?.data) ? h.data.posts.data : [];
+    return arr.reduce((s: number, p: any) => s + (Number(p?.comments?.summary?.total_count || 0)), 0);
+  });
+  const shares = history.map(h => {
+    const arr = Array.isArray(h.data?.posts?.data) ? h.data.posts.data : [];
+    return arr.reduce((s: number, p: any) => s + (Number(p?.shares?.count || 0)), 0);
+  });
+
+  const series = [
+    { key: 'Followers', data: followers, color: '#7fb3ff' },
+    { key: 'Fans', data: fans, color: '#ffd76b' },
+    { key: 'Likes', data: likes, color: '#7fff7f' },
+    { key: 'Comments', data: comments, color: '#ff7b7b' },
+    { key: 'Shares', data: shares, color: '#c48cff' },
+  ];
+
+  const allValues = series.flatMap(s => s.data);
+  const max = Math.max(...allValues, 1);
+  const min = Math.min(...allValues, 0);
+  const viewW = 360, viewH = 120, padding = 10;
+  const step = (viewW - padding * 2) / Math.max(1, history.length - 1);
+
+  const makePath = (data: number[]) => data.map((v, i) => {
     const x = padding + i * step;
     const y = viewH - padding - ((v - min) / (max - min || 1)) * (viewH - padding * 2);
     return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
   }).join(' ');
+
   return (
-    <svg viewBox={`0 0 ${viewW} ${viewH}`} width="100%" height={viewH} preserveAspectRatio="none">
-      <rect x={0} y={0} width={viewW} height={viewH} fill="#23241a" rx={4} />
-      <path d={path} stroke="#7fb3ff" strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
+    <div>
+      <svg viewBox={`0 0 ${viewW} ${viewH}`} width="100%" height={viewH} preserveAspectRatio="none">
+        <rect x={0} y={0} width={viewW} height={viewH} fill="#23241a" rx={6} />
+        {series.map(s => (
+          <path key={s.key} d={makePath(s.data)} stroke={s.color} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        ))}
+      </svg>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+        {series.map(s => (
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#ffd' }}>
+            <div style={{ width: 12, height: 8, background: s.color, borderRadius: 2 }} />
+            <div style={{ fontSize: 12 }}>{s.key}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
