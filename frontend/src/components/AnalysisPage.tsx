@@ -96,14 +96,14 @@ const AnalysisPage: React.FC = () => {
                   pct = prevVal === 0 ? null : ((cur - prevVal) / Math.abs(prevVal)) * 100;
                 }
                 return (
-                  <div key={label} style={{ background: '#fff', padding: 12, borderRadius: 6, minWidth: 160, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                    <div style={{ fontSize: 12, color: '#666' }}>{label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
-                    {pct !== null && pct !== undefined && !Number.isNaN(pct) && (
-                      <div style={{ fontSize: 12, color: pct >= 0 ? 'green' : 'red' }}>{pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%</div>
-                    )}
-                  </div>
-                );
+                    <div key={label} style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 160, boxShadow: '0 1px 6px rgba(0,0,0,0.4)', color: '#ffe066' }}>
+                      <div style={{ fontSize: 12, color: '#ffd' }}>{label}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{value}</div>
+                      {pct !== null && pct !== undefined && !Number.isNaN(pct) && (
+                        <div style={{ fontSize: 12, color: pct >= 0 ? '#7fff7f' : '#ff7b7b' }}>{pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%</div>
+                      )}
+                    </div>
+                  );
               };
 
               const followersCur = Number(latest.followers_count || latest.followers || latest.fan_count || latest.fanCount || 0);
@@ -124,18 +124,24 @@ const AnalysisPage: React.FC = () => {
           </div>
           {/** Charts area: followers sparkline and posts bar chart */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#fff', padding: 12, borderRadius: 6, minWidth: 320 }}>
-              <div style={{ fontSize: 14, color: '#444', marginBottom: 8 }}>Followers (last {history.length} points)</div>
+            <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 320, color: '#ffe066' }}>
+              <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Followers (last {history.length} points)</div>
               <FollowersSparkline history={history} />
             </div>
-            <div style={{ background: '#fff', padding: 12, borderRadius: 6, minWidth: 320 }}>
-              <div style={{ fontSize: 14, color: '#444', marginBottom: 8 }}>Recent Posts Count</div>
+            <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 320, color: '#ffe066' }}>
+              <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Recent Posts Count</div>
               <PostsBarChart history={history} />
             </div>
           </div>
-          <div style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 12, borderRadius: 6 }}>
-            <strong>Fetched:</strong> {new Date(analysis.ts).toLocaleString()}
-            <pre style={{ marginTop: 8 }}>{JSON.stringify(analysis.data, null, 2)}</pre>
+
+          <div style={{ padding: 12, borderRadius: 6, background: 'rgba(255,224,102,0.04)', color: '#ffe066' }}>
+            <div><strong style={{ color: '#fff' }}>{analysis.data?.page?.name || 'Page'}</strong> — fetched: {new Date(analysis.ts).toLocaleString()}</div>
+            {analysis.data?.page?.about && <div style={{ marginTop: 6, color: '#ddd' }}>{analysis.data.page.about}</div>}
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+              <div>Fans: <strong style={{ color: '#fff' }}>{analysis.data?.page?.fan_count ?? '—'}</strong></div>
+              <div>Followers: <strong style={{ color: '#fff' }}>{analysis.data?.page?.followers_count ?? '—'}</strong></div>
+              <div>Posts: <strong style={{ color: '#fff' }}>{Array.isArray(analysis.data?.posts?.data) ? analysis.data.posts.data.length : 0}</strong></div>
+            </div>
           </div>
         </>
       )}
