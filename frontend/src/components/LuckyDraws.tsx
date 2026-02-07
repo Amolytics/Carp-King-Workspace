@@ -126,12 +126,12 @@ export default function LuckyDraws() {
       <p>Quick-launch visual pickers (opens in new tab):</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
         {[
-          { title: 'Random.org', url: 'https://www.random.org/' },
-          { title: 'Wooclap Wheel', url: 'https://www.wooclap.com/en/spin-the-wheel/' },
-          { title: 'Wheel of Names', url: 'https://wheelofnames.com/' },
+          { title: 'Random', url: 'https://www.random.org/' },
+          { title: 'Wooclap', url: 'https://www.wooclap.com/en/spin-the-wheel/' },
+          { title: 'Wheel', url: 'https://wheelofnames.com/' },
           { title: 'HeySpinner', url: 'https://heyspinner.com/random-number-wheel' },
-          { title: 'GigaCalculator RNG', url: 'https://www.gigacalculator.com/calculators/random-number-generator.php' },
-          { title: 'PinkyLam Picker', url: 'https://pinkylam.me/playground/random-name-picker/' },
+          { title: 'GigaCalc', url: 'https://www.gigacalculator.com/calculators/random-number-generator.php' },
+          { title: 'Pinky', url: 'https://pinkylam.me/playground/random-name-picker/' },
         ].map((p, idx) => (
           <div key={idx} style={{ background: '#071018', color: '#fff', padding: 12, borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>{p.title}</div>
