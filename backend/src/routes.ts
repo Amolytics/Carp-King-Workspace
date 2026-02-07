@@ -248,6 +248,15 @@ setInterval(() => {
   processScheduledSlots().catch(err => console.error('scheduled publish failed', err));
 }, 1000 * 60);
 
+// Admin endpoint to run scheduled publish on demand (protected by ADMIN_BACKUP_TOKEN)
+router.post('/admin/publish-due', (req, res) => {
+  if (!requireBackupToken(req, res)) return;
+  processScheduledSlots().then(() => res.json({ success: true, message: 'Publish job started' })).catch(err => {
+    console.error('admin publish-due failed', err);
+    res.status(500).json({ success: false, message: 'Publish job failed', details: String(err) });
+  });
+});
+
 // Add comment to slot
 router.post('/slots/:slotId/comments', async (req, res) => {
   await schemaReady;
