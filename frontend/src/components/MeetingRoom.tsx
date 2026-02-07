@@ -51,7 +51,7 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
       <div className="meeting-room-modal" style={{ maxWidth: 900, margin: 'auto', borderRadius: 16, boxShadow: '0 4px 32px #000a', background: '#23241a', display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
         {/* Left: Info & Notes */}
         <div className="meeting-room-side" style={{ flex: 1, background: '#23241a', padding: 24, display: 'flex', flexDirection: 'column', gap: 20, borderRight: '1.5px solid #ffe06622', minWidth: 0, boxSizing: 'border-box' }}>
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 6, marginLeft: -2 }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: '#ffe066', marginBottom: 6, letterSpacing: 0.5 }}>Agenda</div>
             <div style={{ fontSize: 16, color: '#ffe066cc', fontWeight: 500 }}>{meeting.agenda}</div>
           </div>
