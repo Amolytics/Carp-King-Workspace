@@ -4,7 +4,7 @@ import { Slot, Meeting, User, Comment, GlobalChatMessage } from './types';
 const defaultApi = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost'
   ? 'http://localhost:4000/api'
   : '/api';
-export const API_URL = (typeof window !== 'undefined' && (window as any).__API_URL__) || import.meta.env.VITE_API_URL ?? defaultApi;
+export const API_URL = ((typeof window !== 'undefined' && (window as any).__API_URL__) || import.meta.env.VITE_API_URL) ?? defaultApi;
 // Fallback backend API (used if the site-served /api is the frontend HTML). Set to the known backend domain.
 const FALLBACK_API = 'https://sublime-art-production-4fe1.up.railway.app/api';
 
