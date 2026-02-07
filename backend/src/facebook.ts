@@ -241,6 +241,30 @@ router.get('/analysis/latest', async (req, res) => {
   }
 });
 
+// Return last N analysis entries (default 2)
+router.get('/analysis/history', async (req, res) => {
+  await schemaReady;
+  const limit = Math.max(1, Math.min(50, Number(req.query.limit) || 2));
+  let rows: any[] = [];
+  await withDb(db => {
+    const stmt = db.prepare('SELECT ts, data FROM fb_analysis ORDER BY id DESC LIMIT ?');
+    stmt.bind([limit]);
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
+    }
+    stmt.free && stmt.free();
+  });
+  // parse JSON data for each row
+  const parsed = rows.map(r => {
+    try {
+      return { ts: r.ts, data: JSON.parse(r.data) };
+    } catch (e) {
+      return { ts: r.ts, data: r.data };
+    }
+  });
+  res.json({ success: true, entries: parsed });
+});
+
 router.post('/analysis/refresh', async (req, res) => {
   try {
     const result = await fetchPageAnalysis();
