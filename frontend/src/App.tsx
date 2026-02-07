@@ -17,7 +17,7 @@ import AnalysisPage from './components/AnalysisPage';
 import MeetingsPage from './MeetingsPage';
 import LogoutButton from './components/LogoutButton';
 import AdminPanel from './components/AdminPanel';
-import RaffleDraws from './components/RaffleDraws';
+import LuckyDraws from './components/LuckyDraws';
 import { socket } from './realtime';
 
 const PAGES = [
@@ -233,7 +233,7 @@ const MainApp: React.FC = () => {
           {page === 'analysis' && <AnalysisPage />}
           {page === 'slots' && <PlannerLayout />}
           {page === 'meetings' && <MeetingsPage />}
-          {page === 'raffles' && <RaffleDraws />}
+          {page === 'raffles' && <LuckyDraws />}
         </div>
       </div>
     </ErrorBoundary>
