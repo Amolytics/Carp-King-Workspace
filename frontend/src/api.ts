@@ -80,6 +80,25 @@ export async function addSlot(slot: Omit<Slot, 'id' | 'comments'>): Promise<Slot
   return data;
 }
 
+export async function updateSlot(slotId: string, updates: Partial<Omit<Slot, 'id' | 'comments'>>): Promise<Slot> {
+  const res = await fetch(`${API_URL}/slots/${slotId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  });
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.error || `API error: ${res.status}`);
+  return data;
+}
+
+export async function deleteSlot(slotId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/slots/${slotId}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const data = await parseJsonSafe(res);
+    throw new Error(data?.error || `API error: ${res.status}`);
+  }
+}
+
 export async function addComment(slotId: string, userId: string, text: string): Promise<Comment> {
   const res = await fetch(`${API_URL}/slots/${slotId}/comments`, {
     method: 'POST',

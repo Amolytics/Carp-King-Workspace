@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Slot } from '../types';
-import { getSlots } from '../api';
+import { getSlots, updateSlot, deleteSlot } from '../api';
 import { socket } from '../realtime';
 
 const SlotList: React.FC = () => {
@@ -79,9 +79,44 @@ const SlotList: React.FC = () => {
                 {slot.publishError ? <span style={{ color: '#ff7b7b' }}> — Error</span> : null}
               </div>
             </div>
-            <div style={{ textAlign: 'right', minWidth: 120 }}>
+            <div style={{ textAlign: 'right', minWidth: 160 }}>
+              <div style={{ marginBottom: 6 }}>
+                <button onClick={async () => {
+                  // edit flow: only allow editing if not published
+                  if (slot.published) return alert('Cannot edit a published post');
+                  const newContent = window.prompt('Edit post content', slot.content || '');
+                  if (newContent === null) return; // cancelled
+                  const currentLocal = slot.scheduledAt ? new Date(slot.scheduledAt) : null;
+                  const currentInput = currentLocal ? new Date(currentLocal.getTime() - currentLocal.getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
+                  const newScheduled = window.prompt('Edit scheduled time (local, YYYY-MM-DDTHH:MM)', currentInput || '');
+                  try {
+                    const updates: any = { content: newContent };
+                    if (newScheduled) updates.scheduledAt = new Date(newScheduled).toISOString();
+                    const updated = await updateSlot(slot.id!, updates);
+                    const fresh = await getSlots();
+                    setSlots(fresh);
+                    try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
+                  } catch (err: any) {
+                    alert('Update failed: ' + (err?.message || String(err)));
+                  }
+                }} style={{ marginRight: 8 }} title="Edit">⋯</button>
+                <button onClick={async () => {
+                  if (slot.published) return alert('Cannot delete a published post');
+                  if (!confirm('Delete this scheduled post?')) return;
+                  try {
+                    await deleteSlot(slot.id!);
+                    const fresh = await getSlots();
+                    setSlots(fresh);
+                    try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
+                  } catch (err: any) {
+                    alert('Delete failed: ' + (err?.message || String(err)));
+                  }
+                }} title="Delete">🗑</button>
+              </div>
+              <div>
               {slot.publishedAt && <div style={{ fontSize: 12, color: '#fff' }}>Posted: {new Date(slot.publishedAt).toLocaleString()}</div>}
               {slot.publishError && <div style={{ fontSize: 12, color: '#ff7b7b' }}>{String(slot.publishError).slice(0, 120)}</div>}
+              </div>
             </div>
           </div>
         ))}

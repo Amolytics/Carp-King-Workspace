@@ -226,10 +226,10 @@ async function processScheduledSlots() {
               saveDb(db);
             });
             emit('slot:published', { slotId: slot.id, result });
-          } catch (pubErr) {
+          } catch (pubErr: any) {
             console.error('Failed to publish slot', slot.id, pubErr);
             // save last error
-            slot.publishError = String(pubErr?.message || pubErr);
+            slot.publishError = String((pubErr as any)?.message || pubErr);
             await withDb(db => {
               db.run('UPDATE slots SET data = ? WHERE id = ?', [JSON.stringify(slot), slot.id]);
               saveDb(db);
@@ -274,6 +274,44 @@ router.post('/slots/:slotId/comments', async (req, res) => {
     saveDb(db);
     emit('slot:comment', { slotId, comment });
     res.json(comment);
+  });
+});
+
+// Update a slot (only allowed before it's published)
+router.put('/slots/:slotId', async (req, res) => {
+  await schemaReady;
+  const { slotId } = req.params;
+  const updates: any = req.body || {};
+  await withDb(db => {
+    const row = queryOne<{ data: string }>(db, 'SELECT data FROM slots WHERE id = ?', [slotId]);
+    if (!row) return res.status(404).json({ error: 'Slot not found' });
+    const slot = JSON.parse(row.data) as any;
+    if (slot.published) return res.status(400).json({ error: 'Cannot edit a published slot' });
+    if (typeof updates.content === 'string') slot.content = updates.content;
+    if (typeof updates.imageUrl === 'string') slot.imageUrl = updates.imageUrl;
+    if (updates.scheduledAt) {
+      try { slot.scheduledAt = new Date(updates.scheduledAt).toISOString(); } catch (e) { slot.scheduledAt = null; }
+    }
+    db.run('UPDATE slots SET data = ? WHERE id = ?', [JSON.stringify(slot), slotId]);
+    saveDb(db);
+    try { emit('slot:updated', slot); } catch (e) { console.warn('emit slot:updated failed', e); }
+    res.json(slot);
+  });
+});
+
+// Delete a slot (only allowed before it's published)
+router.delete('/slots/:slotId', async (req, res) => {
+  await schemaReady;
+  const { slotId } = req.params;
+  await withDb(db => {
+    const row = queryOne<{ data: string }>(db, 'SELECT data FROM slots WHERE id = ?', [slotId]);
+    if (!row) return res.status(404).json({ error: 'Slot not found' });
+    const slot = JSON.parse(row.data) as any;
+    if (slot.published) return res.status(400).json({ error: 'Cannot delete a published slot' });
+    db.run('DELETE FROM slots WHERE id = ?', [slotId]);
+    saveDb(db);
+    try { emit('slot:deleted', { slotId }); } catch (e) { console.warn('emit slot:deleted failed', e); }
+    res.json({ ok: true });
   });
 });
 
