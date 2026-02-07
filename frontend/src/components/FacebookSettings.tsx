@@ -4,11 +4,11 @@ import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'fb-page-details';
 
-// Hardcoded page details to autofill and persist (replace with real values)
+// Hardcoded page details to autofill and persist (from data/fb_page.json)
 const HARDCODED_PAGE = {
-  pageId: 'YOUR_PAGE_ID_HERE',
-  pageName: 'YOUR_PAGE_NAME_HERE',
-  accessToken: 'YOUR_LONG_PAGE_ACCESS_TOKEN_HERE'
+  pageId: '978115298717798',
+  pageName: 'Carp King Competitions',
+  accessToken: 'EAFtelW8bXLgBQqF2c4P3sZBTbk1hPmFVUqtO9IhdknDxGRg46aD5xZBGBJYrdJg4hgM2pMZB6cacJZCLyy5SERFkW5vPHZBXvGAYYCZA04eaGIDfTjaSL38ciFyKlqZBfZAuOKuaLD3bJqGpTFsspHin9dYg8CSWoK1E7iuJKj7xZBnSJnKjQBdREdojtHheYzIZCyWP0xTskyhskb2EMzrs2E'
 };
 
 const FacebookSettings: React.FC = () => {
