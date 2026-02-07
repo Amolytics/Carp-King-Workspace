@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { clearUsers, API_URL } from '../api';
 import FacebookSettings from './FacebookSettings';
+import AdminLogs from './AdminLogs';
 import { useCallback } from 'react';
 
 const panelStyle: React.CSSProperties = {
@@ -66,6 +67,7 @@ function AdminPanel() {
   const [roleMsg, setRoleMsg] = useState<string | null>(null);
   const [backupToken, setBackupToken] = useState('');
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
   const [fbStatus, setFbStatus] = useState<{ connected: boolean; page?: any; message?: string } | null>(null);
   const [fbDetails, setFbDetails] = useState<any | null>(null);
 
@@ -170,6 +172,9 @@ function AdminPanel() {
         <button style={{ ...buttonStyle, marginTop: 1, marginBottom: 1, padding: '2px 8px', fontSize: 14 }} onClick={handleClearUsers} disabled={loading}>
           {loading ? 'Clearing...' : 'Clear All Users (except admin)'}
         </button>
+          <button style={{ ...buttonStyle, marginTop: 1, marginBottom: 1, padding: '2px 8px', fontSize: 14 }} onClick={() => setShowLogs(true)}>
+            Open Logs Viewer
+          </button>
       </div>
       {message && <div style={{ color: message.includes('Failed') ? 'red' : '#ffe066', marginTop: 2 }}>{message}</div>}
 
@@ -207,6 +212,7 @@ function AdminPanel() {
         )}
         {roleMsg && <div style={{ color: roleMsg.includes('Failed') ? 'red' : '#7fff7f', marginTop: 2 }}>{roleMsg}</div>}
       </div>
+      {showLogs && <AdminLogs token={backupToken} onClose={() => setShowLogs(false)} />}
 
         <div style={{ width: '100%', margin: '6px 0 0 0' }}>
           <h3 style={{ color: '#ffe066', marginBottom: 2 }}>Database Backup</h3>
