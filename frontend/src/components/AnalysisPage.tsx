@@ -11,10 +11,10 @@ const AnalysisPage: React.FC = () => {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const intervalRef = useRef<number | null>(null);
 
-  const fetchLatest = async () => {
+  const fetchLatest = async (limit = 24) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/facebook/analysis/history?limit=12');
+      const res = await fetch(`/api/facebook/analysis/history?limit=${limit}`);
       if (!res.ok) throw new Error('No analysis available');
       const json = await res.json();
       if (json.success) {
@@ -61,7 +61,7 @@ const AnalysisPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLatest();
+    fetchLatest(24);
     // schedule hourly refresh in UI (in addition to backend scheduled job)
     intervalRef.current = window.setInterval(() => {
       runAnalysisNow();
@@ -73,18 +73,18 @@ const AnalysisPage: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Analysis</h2>
-      <div style={{ marginBottom: 12 }}>
-        <button className="btn" onClick={runAnalysisNow} disabled={loading}>Run Analysis</button>
-        <button className="btn" onClick={fetchLatest} disabled={loading} style={{ marginLeft: 8 }}>Refresh</button>
-        <button className="btn" onClick={downloadReport} disabled={!analysis} style={{ marginLeft: 8 }}>Download Report (.txt)</button>
+    <div style={{ padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <h2 style={{ margin: 0 }}>Analysis</h2>
+        <div style={{ marginLeft: 12 }}>
+          <button className="btn" onClick={() => fetchLatest(24)} disabled={loading}>Refresh</button>
+        </div>
       </div>
       {loading && <div>Loading…</div>}
       {!analysis && !loading && <div>No analysis available yet.</div>}
       {analysis && (
         <>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             {/** Compute metrics: followers, fans, posts count and percent change vs previous entry */}
             {(() => {
               const latest = analysis.data?.page || {};
@@ -113,22 +113,41 @@ const AnalysisPage: React.FC = () => {
               const postsCur = Array.isArray(analysis.data?.posts?.data) ? analysis.data.posts.data.length : (analysis.data?.posts?.data?.length || 0);
               const postsPrev = history[1] ? (Array.isArray(history[1].data?.posts?.data) ? history[1].data.posts.data.length : 0) : undefined;
 
+              // Aggregate reactions/comments/shares across recent posts
+              const sumField = (arr: any[] | undefined, getter: (p: any)=>number) => {
+                if (!Array.isArray(arr)) return 0;
+                return arr.reduce((s, p) => s + (getter(p) || 0), 0);
+              };
+
+              const postsArr = Array.isArray(analysis.data?.posts?.data) ? analysis.data.posts.data : [];
+              const postsArrPrev = history[1] && Array.isArray(history[1].data?.posts?.data) ? history[1].data.posts.data : [];
+
+              const likesCur = sumField(postsArr, (p) => Number(p?.reactions?.summary?.total_count || 0));
+              const likesPrev = postsArrPrev.length ? sumField(postsArrPrev, (p) => Number(p?.reactions?.summary?.total_count || 0)) : undefined;
+              const commentsCur = sumField(postsArr, (p) => Number(p?.comments?.summary?.total_count || 0));
+              const commentsPrev = postsArrPrev.length ? sumField(postsArrPrev, (p) => Number(p?.comments?.summary?.total_count || 0)) : undefined;
+              const sharesCur = sumField(postsArr, (p) => Number(p?.shares?.count || 0));
+              const sharesPrev = postsArrPrev.length ? sumField(postsArrPrev, (p) => Number(p?.shares?.count || 0)) : undefined;
+
               return (
                 <>
                   {makeCard('Followers', followersCur, followersPrev)}
                   {makeCard('Fans', fansCur, fansPrev)}
                   {makeCard('Recent posts', postsCur, postsPrev)}
+                  {makeCard('Likes', likesCur, likesPrev)}
+                  {makeCard('Comments', commentsCur, commentsPrev)}
+                  {makeCard('Shares', sharesCur, sharesPrev)}
                 </>
               );
             })()}
           </div>
           {/** Charts area: followers sparkline and posts bar chart */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 320, color: '#ffe066' }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 220, flex: '1 1 320px', color: '#ffe066' }}>
               <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Followers (last {history.length} points)</div>
               <FollowersSparkline history={history} />
             </div>
-            <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 320, color: '#ffe066' }}>
+            <div style={{ background: '#23241a', padding: 12, borderRadius: 6, minWidth: 220, flex: '1 1 320px', color: '#ffe066' }}>
               <div style={{ fontSize: 14, color: '#ffd', marginBottom: 8 }}>Recent Posts Count</div>
               <PostsBarChart history={history} />
             </div>
@@ -155,17 +174,17 @@ const FollowersSparkline: React.FC<{ history: AnalysisResult[] }> = ({ history }
   const points = history.map(h => Number(h.data?.page?.followers_count || h.data?.page?.followers || h.data?.page?.fan_count || 0));
   const max = Math.max(...points, 1);
   const min = Math.min(...points, 0);
-  const w = 300, h = 60, padding = 4;
-  const step = (w - padding * 2) / Math.max(1, points.length - 1);
+  const viewW = 300, viewH = 60, padding = 6;
+  const step = (viewW - padding * 2) / Math.max(1, points.length - 1);
   const path = points.map((v, i) => {
     const x = padding + i * step;
-    const y = h - padding - ((v - min) / (max - min || 1)) * (h - padding * 2);
+    const y = viewH - padding - ((v - min) / (max - min || 1)) * (viewH - padding * 2);
     return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
   }).join(' ');
   return (
-    <svg width={w} height={h}>
-      <rect x={0} y={0} width={w} height={h} fill="#fff" rx={4} />
-      <path d={path} stroke="#1976d2" strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+    <svg viewBox={`0 0 ${viewW} ${viewH}`} width="100%" height={viewH} preserveAspectRatio="none">
+      <rect x={0} y={0} width={viewW} height={viewH} fill="#23241a" rx={4} />
+      <path d={path} stroke="#7fb3ff" strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 };
@@ -174,16 +193,16 @@ const FollowersSparkline: React.FC<{ history: AnalysisResult[] }> = ({ history }
 const PostsBarChart: React.FC<{ history: AnalysisResult[] }> = ({ history }) => {
   if (!history || history.length === 0) return <div>No data</div>;
   const counts = history.map(h => Array.isArray(h.data?.posts?.data) ? h.data.posts.data.length : 0).reverse();
-  const w = 300, h = 60, barGap = 4;
-  const barWidth = Math.max(4, (w - (counts.length - 1) * barGap) / counts.length);
+  const viewW = 300, viewH = 60, barGap = 4;
+  const barWidth = Math.max(4, (viewW - (counts.length - 1) * barGap) / Math.max(1, counts.length));
   const max = Math.max(...counts, 1);
   return (
-    <svg width={w} height={h}>
-      <rect x={0} y={0} width={w} height={h} fill="#fff" rx={4} />
+    <svg viewBox={`0 0 ${viewW} ${viewH}`} width="100%" height={viewH} preserveAspectRatio="none">
+      <rect x={0} y={0} width={viewW} height={viewH} fill="#23241a" rx={4} />
       {counts.map((c, i) => {
         const x = i * (barWidth + barGap);
-        const bh = (c / max) * (h - 8);
-        const y = h - bh - 4;
+        const bh = (c / max) * (viewH - 8);
+        const y = viewH - bh - 4;
         return <rect key={i} x={x} y={y} width={barWidth} height={bh} fill="#4caf50" />;
       })}
     </svg>

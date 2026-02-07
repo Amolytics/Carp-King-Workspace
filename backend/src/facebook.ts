@@ -35,13 +35,13 @@ async function loadCredentialsFromFiles() {
     try {
       if (!fs.existsSync(p)) continue;
       const raw = fs.readFileSync(p, 'utf8');
-      const parsed = JSON.parse(raw);
+      const parsed: any = JSON.parse(raw);
       const pageId = parsed.pageId || parsed.page_id || parsed.id || parsed.page?.pageId;
       const pageName = parsed.pageName || parsed.page_name || parsed.name || parsed.page?.pageName;
       const accessToken = parsed.accessToken || parsed.access_token || parsed.token || parsed.page?.accessToken;
       if (pageId && pageName && accessToken) {
         await withDb(db => {
-          const existing = queryOne(db, 'SELECT pageId, pageName FROM fb_page WHERE id = 1');
+          const existing: any = queryOne(db, 'SELECT pageId, pageName FROM fb_page WHERE id = 1');
           if (!existing) {
             db.run('DELETE FROM fb_page');
             db.run('INSERT INTO fb_page (id, pageId, pageName, accessToken) VALUES (1, ?, ?, ?)', [String(pageId), String(pageName), String(accessToken)]);
@@ -57,7 +57,7 @@ async function loadCredentialsFromFiles() {
         return;
       }
     } catch (err) {
-      console.warn('Failed to load FB credentials from', p, err?.message || err);
+      console.warn('Failed to load FB credentials from', p, (err as any)?.message || err);
     }
   }
 }
@@ -231,7 +231,8 @@ async function fetchPageAnalysis() {
     const pageResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}?fields=name,about,fan_count,followers_count&access_token=${encodeURIComponent(token)}`);
     const pageJson = await pageResp.json().catch(() => null);
     // Fetch recent posts (last 5)
-    const postsResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time&access_token=${encodeURIComponent(token)}`);
+    // Request summary counts for reactions and comments, and shares count when available
+    const postsResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time,reactions.summary(true).limit(0),comments.summary(true).limit(0),shares&access_token=${encodeURIComponent(token)}`);
     const postsJson = await postsResp.json().catch(() => null);
     const summary = { ts: Date.now(), page: pageJson, posts: postsJson };
     await withDb(db => {
