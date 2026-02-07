@@ -139,45 +139,9 @@ export default function LuckyDraws() {
           </div>
         ))}
       </div>
-
-      <h2>Lucky Draw (Snazzy Inline)</h2>
-      <p>Six large inline draw stations — paste names/ticket numbers (one per line) or switch to numeric range. Click <strong>Spin</strong> to run a dramatic animated draw.</p>
-      <div ref={containerRef as any} style={grid}>
-        {pickers.map((p, i) => (
-          <div key={i} style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong style={{ fontSize: 16 }}>Draw #{i + 1}</strong>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <label style={{ color: '#9fb6d6' }}>
-                  <input type="radio" name={`mode-${i}`} checked={p.mode === 'list'} onChange={() => updatePicker(i, { mode: 'list' })} /> List
-                </label>
-                <label style={{ color: '#9fb6d6' }}>
-                  <input type="radio" name={`mode-${i}`} checked={p.mode === 'range'} onChange={() => updatePicker(i, { mode: 'range' })} /> Range
-                </label>
-              </div>
-            </div>
-
-            {p.mode === 'list' ? (
-              <textarea style={textarea} rows={6} placeholder="Paste names or ticket numbers, one per line" value={p.text} onChange={e => updatePicker(i, { text: e.target.value })} />
-            ) : (
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <label style={{ color: '#9fb6d6' }}>Min: <input type="number" value={p.min} onChange={e => updatePicker(i, { min: Math.max(0, Number(e.target.value) || 0) })} style={{ width: 96, marginLeft: 6 }} /></label>
-                <label style={{ color: '#9fb6d6' }}>Max: <input type="number" value={p.max} onChange={e => updatePicker(i, { max: Math.max(0, Number(e.target.value) || 0) })} style={{ width: 96, marginLeft: 6 }} /></label>
-              </div>
-            )}
-
-            <div style={controls}>
-              <button className="ck-btn" onClick={() => doSpin(i, 1)} disabled={running[i]} style={{ padding: '10px 14px', borderRadius: 8, background: '#ffce55', border: 'none', fontWeight: 800 }}>Spin</button>
-              <button className="ck-btn" onClick={() => sample(i)} style={{ padding: '8px 10px', borderRadius: 8 }}>Sample</button>
-              <button className="ck-btn" onClick={() => clearPicker(i)} style={{ padding: '8px 10px', borderRadius: 8 }}>Clear</button>
-              <div style={{ marginLeft: 'auto', color: '#9fb6d6', fontSize: 13 }}>{p.mode === 'list' ? `${parseLines(p.text).length} entries` : `Range ${p.min}–${p.max}`}</div>
-            </div>
-
-            <div style={{ ...bigDisplay }}>
-              <div style={{ padding: '8px 18px', borderRadius: 10, background: running[i] ? 'linear-gradient(90deg,#ffd27a,#ffb86b)' : '#07202b', minWidth: 320, textAlign: 'center', boxShadow: running[i] ? '0 10px 30px rgba(255,178,107,0.18)' : 'none', transition: 'all 300ms ease' }}>{display[i]}</div>
-            </div>
-          </div>
-        ))}
+      <div style={{ textAlign: 'center', marginTop: 18 }}>
+        <h2 style={{ margin: 0 }}>Lucky Draw</h2>
+        <p style={{ marginTop: 8 }}>Inline pickers removed — use the Online Pickers above or open a picker in a new tab.</p>
       </div>
 
       <style>{`
