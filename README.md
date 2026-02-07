@@ -24,6 +24,18 @@
    npm run start
    - Runs on http://localhost:3000
 
+## Frontend Docker build (production)
+
+When building the frontend Docker image you must provide `VITE_API_URL` at build time so the compiled assets call the correct backend (the dev proxy does not apply to production builds).
+
+Example build command:
+
+```bash
+docker build -f frontend/Dockerfile --build-arg VITE_API_URL="http://backend:4000/api" -t carp-king-frontend:latest frontend/
+```
+
+This sets the `VITE_API_URL` environment variable during the build so Vite compiles the correct API base URL into the production bundle.
+
 ## Features
 - Planner, slot threads, team chat, meetings, admin/editor roles
 - Image upload with size enforcement (to be implemented)
