@@ -5,19 +5,30 @@ import { socket } from '../realtime';
 
 const SlotList: React.FC = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [editing, setEditing] = useState<Slot | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editScheduled, setEditScheduled] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+
+  function isoToInputLocal(iso?: string | null) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+  }
 
   useEffect(() => {
-    getSlots().then(setSlots);
+    getSlots().then(list => setSlots(list.filter(s => !s.published)));
     const refreshedHandler = (e: any) => {
       try {
         const payload = e?.detail as Slot[] | undefined;
-        if (payload && Array.isArray(payload)) setSlots(payload);
+        if (payload && Array.isArray(payload)) setSlots(payload.filter(s => !s.published));
       } catch (err) {}
     };
     const windowHandler = (e: any) => {
       try {
         const slot = e?.detail as Slot | undefined;
-        if (slot && slot.id) setSlots(prev => [slot, ...prev]);
+        if (slot && slot.id && !slot.published) setSlots(prev => [slot, ...prev]);
       } catch (err) {
         // ignore
       }
@@ -27,12 +38,19 @@ const SlotList: React.FC = () => {
       // fetch authoritative list to avoid missing or out-of-order items.
       try {
         const fresh = await getSlots();
-        setSlots(fresh);
+        setSlots(fresh.filter(s => !s.published));
       } catch (err) {}
     };
-    const socketPublished = (_payload: any) => {
-      // refresh list on publish
-      getSlots().then(setSlots).catch(() => {});
+    const socketPublished = (payload: any) => {
+      try {
+        const slotId = payload?.slotId;
+        if (slotId) {
+          setSlots(prev => prev.filter(s => s.id !== slotId));
+          return;
+        }
+      } catch (err) {}
+      // fallback: refetch authoritative queued slots
+      getSlots().then(list => setSlots(list.filter(s => !s.published))).catch(() => {});
     };
 
     window.addEventListener('slot:created', windowHandler as EventListener);
@@ -81,24 +99,12 @@ const SlotList: React.FC = () => {
             </div>
             <div style={{ textAlign: 'right', minWidth: 160 }}>
               <div style={{ marginBottom: 6 }}>
-                <button onClick={async () => {
-                  // edit flow: only allow editing if not published
+                <button onClick={() => {
                   if (slot.published) return alert('Cannot edit a published post');
-                  const newContent = window.prompt('Edit post content', slot.content || '');
-                  if (newContent === null) return; // cancelled
-                  const currentLocal = slot.scheduledAt ? new Date(slot.scheduledAt) : null;
-                  const currentInput = currentLocal ? new Date(currentLocal.getTime() - currentLocal.getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
-                  const newScheduled = window.prompt('Edit scheduled time (local, YYYY-MM-DDTHH:MM)', currentInput || '');
-                  try {
-                    const updates: any = { content: newContent };
-                    if (newScheduled) updates.scheduledAt = new Date(newScheduled).toISOString();
-                    const updated = await updateSlot(slot.id!, updates);
-                    const fresh = await getSlots();
-                    setSlots(fresh);
-                    try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
-                  } catch (err: any) {
-                    alert('Update failed: ' + (err?.message || String(err)));
-                  }
+                  setEditing(slot);
+                  setEditContent(slot.content || '');
+                  setEditImageUrl(slot.imageUrl || '');
+                  setEditScheduled(isoToInputLocal(slot.scheduledAt));
                 }} style={{ marginRight: 8 }} title="Edit">⋯</button>
                 <button onClick={async () => {
                   if (slot.published) return alert('Cannot delete a published post');
@@ -121,6 +127,35 @@ const SlotList: React.FC = () => {
           </div>
         ))}
       </div>
+      {editing && (
+        <div style={{ position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+          <div style={{ width: 720, maxWidth: '90%', background: '#0f1110', padding: 18, borderRadius: 8 }}>
+            <h3 style={{ marginTop: 0 }}>Edit Scheduled Post</h3>
+            <label style={{ display: 'block', marginBottom: 6 }}>Content</label>
+            <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={6} style={{ width: '100%', marginBottom: 8 }} />
+            <label style={{ display: 'block', marginBottom: 6 }}>Scheduled time</label>
+            <input type="datetime-local" value={editScheduled} onChange={e => setEditScheduled(e.target.value)} style={{ width: '100%', marginBottom: 8 }} />
+            <label style={{ display: 'block', marginBottom: 6 }}>Image URL</label>
+            <input type="url" value={editImageUrl} onChange={e => setEditImageUrl(e.target.value)} style={{ width: '100%', marginBottom: 12 }} />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => { setEditing(null); }} className="btn btn-ghost">Cancel</button>
+              <button onClick={async () => {
+                try {
+                  const updates: any = { content: editContent, imageUrl: editImageUrl };
+                  if (editScheduled) updates.scheduledAt = new Date(editScheduled).toISOString();
+                  await updateSlot(editing.id!, updates);
+                  const fresh = await getSlots();
+                  setSlots(fresh.filter(s => !s.published));
+                  try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
+                  setEditing(null);
+                } catch (err: any) {
+                  alert('Update failed: ' + (err?.message || String(err)));
+                }
+              }} className="btn">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
