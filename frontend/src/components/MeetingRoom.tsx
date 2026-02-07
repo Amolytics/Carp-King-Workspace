@@ -27,6 +27,8 @@ const MeetingRoom: React.FC<MeetingRoomProps> = ({ meeting, onClose }) => {
   const { user } = useAuth();
 
   const handleLockUnlockChat = () => {
+    // Only allow admins to toggle the locked state (defense-in-depth)
+    if (!user || user.role !== 'admin') return;
     setChatLocked(l => !l);
   };
   const handleArchive = () => {
