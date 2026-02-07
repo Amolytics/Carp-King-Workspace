@@ -99,6 +99,13 @@ export async function deleteSlot(slotId: string): Promise<void> {
   }
 }
 
+export async function postSlotNow(slotId: string): Promise<any> {
+  const res = await fetch(`${API_URL}/slots/${slotId}/publish`, { method: 'POST' });
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.error || `API error: ${res.status}`);
+  return data;
+}
+
 export async function addComment(slotId: string, userId: string, text: string): Promise<Comment> {
   const res = await fetch(`${API_URL}/slots/${slotId}/comments`, {
     method: 'POST',

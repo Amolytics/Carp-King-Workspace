@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Slot } from '../types';
-import { getSlots, updateSlot, deleteSlot } from '../api';
+import { getSlots, updateSlot, deleteSlot, postSlotNow } from '../api';
 import { socket } from '../realtime';
 
 const SlotList: React.FC = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [editing, setEditing] = useState<Slot | null>(null);
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [editScheduled, setEditScheduled] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
@@ -98,26 +99,39 @@ const SlotList: React.FC = () => {
               </div>
             </div>
             <div style={{ textAlign: 'right', minWidth: 160 }}>
-              <div style={{ marginBottom: 6 }}>
-                <button onClick={() => {
-                  if (slot.published) return alert('Cannot edit a published post');
-                  setEditing(slot);
-                  setEditContent(slot.content || '');
-                  setEditImageUrl(slot.imageUrl || '');
-                  setEditScheduled(isoToInputLocal(slot.scheduledAt));
-                }} style={{ marginRight: 8 }} title="Edit">⋯</button>
-                <button onClick={async () => {
-                  if (slot.published) return alert('Cannot delete a published post');
-                  if (!confirm('Delete this scheduled post?')) return;
-                  try {
-                    await deleteSlot(slot.id!);
-                    const fresh = await getSlots();
-                    setSlots(fresh);
-                    try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
-                  } catch (err: any) {
-                    alert('Delete failed: ' + (err?.message || String(err)));
-                  }
-                }} title="Delete">🗑</button>
+              <div style={{ marginBottom: 6, position: 'relative' }}>
+                <button onClick={() => setMenuOpenFor(menuOpenFor === slot.id ? null : slot.id)} title="Menu">⋯</button>
+                {menuOpenFor === slot.id && (
+                  <div style={{ position: 'absolute', right: 0, top: 28, background: '#0b0c0a', border: '1px solid #2b2d28', borderRadius: 6, padding: 8, minWidth: 140, zIndex: 50 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <button onClick={() => { setMenuOpenFor(null); if (!slot.published) { setEditing(slot); setEditContent(slot.content || ''); setEditImageUrl(slot.imageUrl || ''); setEditScheduled(isoToInputLocal(slot.scheduledAt)); } else { alert('Cannot edit a published post'); } }} className="btn btn-ghost">Edit</button>
+                      <button onClick={async () => {
+                        setMenuOpenFor(null);
+                        if (slot.published) return alert('Already published');
+                        if (!confirm('Post this now?')) return;
+                        try {
+                          await postSlotNow(slot.id!);
+                          setSlots(prev => prev.filter(s => s.id !== slot.id));
+                        } catch (err: any) {
+                          alert('Publish failed: ' + (err?.message || String(err)));
+                        }
+                      }} className="btn">Post now</button>
+                      <button onClick={async () => {
+                        setMenuOpenFor(null);
+                        if (slot.published) return alert('Cannot delete a published post');
+                        if (!confirm('Delete this scheduled post?')) return;
+                        try {
+                          await deleteSlot(slot.id!);
+                          const fresh = await getSlots();
+                          setSlots(fresh.filter(s => !s.published));
+                          try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
+                        } catch (err: any) {
+                          alert('Delete failed: ' + (err?.message || String(err)));
+                        }
+                      }} className="btn btn-danger">Delete</button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
               {slot.publishedAt && <div style={{ fontSize: 12, color: '#fff' }}>Posted: {new Date(slot.publishedAt).toLocaleString()}</div>}

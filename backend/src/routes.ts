@@ -315,6 +315,43 @@ router.delete('/slots/:slotId', async (req, res) => {
   });
 });
 
+// Publish a single slot on demand (only if not yet published)
+router.post('/slots/:slotId/publish', async (req, res) => {
+  await schemaReady;
+  const { slotId } = req.params;
+  let slot: any = null;
+  let page: any = null;
+  // load slot and page creds
+  await withDb(db => {
+    const row = queryOne<{ data: string }>(db, 'SELECT data FROM slots WHERE id = ?', [slotId]);
+    if (!row) return;
+    slot = JSON.parse(row.data as string) as any;
+    page = queryOne(db, 'SELECT pageId, accessToken FROM fb_page WHERE id = 1');
+  });
+  if (!slot) return res.status(404).json({ error: 'Slot not found' });
+  if (slot.published) return res.status(400).json({ error: 'Slot already published' });
+  if (!page || !page.pageId || !page.accessToken) return res.status(400).json({ error: 'No page credentials available to publish' });
+  try {
+    const result = await publishPost(page.pageId, page.accessToken, slot.content || slot.message || '', slot.imageUrl || '');
+    slot.published = true;
+    slot.publishedAt = new Date().toISOString();
+    slot.fbResult = result;
+    await withDb(db => {
+      db.run('UPDATE slots SET data = ? WHERE id = ?', [JSON.stringify(slot), slotId]);
+      saveDb(db);
+    });
+    try { emit('slot:published', { slotId: slot.id, result }); } catch (e) {}
+    res.json({ success: true, result });
+  } catch (err: any) {
+    slot.publishError = String((err as any)?.message || err);
+    await withDb(db => {
+      db.run('UPDATE slots SET data = ? WHERE id = ?', [JSON.stringify(slot), slotId]);
+      saveDb(db);
+    });
+    res.status(500).json({ error: 'Publish failed', details: String(err) });
+  }
+});
+
 // Get all meetings
 router.get('/meetings', async (req, res) => {
   await schemaReady;
