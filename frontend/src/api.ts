@@ -1,7 +1,10 @@
 // API helpers for frontend
 import { Slot, Meeting, User, Comment, GlobalChatMessage } from './types';
 
-export const API_URL = import.meta.env.VITE_API_URL ?? '/api';
+const defaultApi = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost'
+  ? 'http://localhost:4000/api'
+  : '/api';
+export const API_URL = import.meta.env.VITE_API_URL ?? defaultApi;
 
 async function parseJsonSafe(res: Response): Promise<any> {
   const contentType = res.headers.get('content-type') || '';
