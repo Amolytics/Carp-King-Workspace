@@ -12,7 +12,11 @@ COPY . .
 RUN npm run build
 
 # Runtime: use nginx to serve static files
-FROM nginx:stable-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
+FROM node:18-alpine AS runtime
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+# Install a tiny static file server (serve) and run it. Using a Node runtime
+# ensures `npx`/npm tools are available if Railway injects runtime commands.
+RUN npm install -g serve
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["serve", "-s", "dist", "-l", "80"]
