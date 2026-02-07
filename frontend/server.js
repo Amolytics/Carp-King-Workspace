@@ -14,10 +14,14 @@ app.use((req, res, next) => {
 const { URL } = require('url');
 const http = require('http');
 const https = require('https');
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
+const RAW_BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:4000');
+const BACKEND_URL = RAW_BACKEND_URL && String(RAW_BACKEND_URL).trim();
+console.log('Using BACKEND_URL:', JSON.stringify(RAW_BACKEND_URL));
 app.use('/api', (req, res) => {
   try {
-    const target = new URL(req.originalUrl, BACKEND_URL);
+    const cleanBase = (BACKEND_URL || 'http://localhost:4000').replace(/\s+/g, '');
+    const target = new URL(req.originalUrl, cleanBase);
+    console.log('Proxy target:', target.href);
     const lib = target.protocol === 'https:' ? https : http;
     const options = {
       method: req.method,
