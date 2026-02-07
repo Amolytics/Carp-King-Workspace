@@ -8,6 +8,12 @@ const SlotList: React.FC = () => {
 
   useEffect(() => {
     getSlots().then(setSlots);
+    const refreshedHandler = (e: any) => {
+      try {
+        const payload = e?.detail as Slot[] | undefined;
+        if (payload && Array.isArray(payload)) setSlots(payload);
+      } catch (err) {}
+    };
     const windowHandler = (e: any) => {
       try {
         const slot = e?.detail as Slot | undefined;
@@ -16,9 +22,12 @@ const SlotList: React.FC = () => {
         // ignore
       }
     };
-    const socketCreated = (slot: any) => {
+    const socketCreated = async (_slot: any) => {
+      // When server emits a created slot (or another client created one),
+      // fetch authoritative list to avoid missing or out-of-order items.
       try {
-        if (slot && slot.id) setSlots(prev => [slot, ...prev]);
+        const fresh = await getSlots();
+        setSlots(fresh);
       } catch (err) {}
     };
     const socketPublished = (_payload: any) => {
@@ -27,12 +36,14 @@ const SlotList: React.FC = () => {
     };
 
     window.addEventListener('slot:created', windowHandler as EventListener);
+    window.addEventListener('slots:refreshed', refreshedHandler as EventListener);
     const refreshHandler = () => { getSlots().then(setSlots).catch(() => {}); };
     window.addEventListener('slots:refresh', refreshHandler as EventListener);
     socket.on('slot:created', socketCreated);
     socket.on('slot:published', socketPublished);
     return () => {
       window.removeEventListener('slot:created', windowHandler as EventListener);
+      window.removeEventListener('slots:refreshed', refreshedHandler as EventListener);
       window.removeEventListener('slots:refresh', refreshHandler as EventListener);
       socket.off('slot:created', socketCreated);
       socket.off('slot:published', socketPublished);

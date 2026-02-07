@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import SlotList from './components/SlotList';
 import ImageUpload from './components/ImageUpload';
-import { addSlot } from './api';
+import { addSlot, getSlots } from './api';
 
 const PlannerLayout: React.FC = () => {
   const [postContent, setPostContent] = useState('');
@@ -60,8 +60,12 @@ const PlannerLayout: React.FC = () => {
                 // notify slot list to update immediately (after successful save)
                 try { window.dispatchEvent(new CustomEvent('slot:created', { detail: slot })); } catch (e) { /* ignore */ }
                 setSaveSuccess('Scheduled post saved.');
-                // notify other components to refresh slots list as a fallback
-                try { window.dispatchEvent(new CustomEvent('slots:refresh')); } catch (e) {}
+                // fetch latest slots and dispatch to ensure clients update reliably
+                try {
+                  const fresh = await getSlots();
+                  try { window.dispatchEvent(new CustomEvent('slots:refreshed', { detail: fresh })); } catch (e) {}
+                  try { window.dispatchEvent(new CustomEvent('slots:refresh')); } catch (e) {}
+                } catch (e) { /* ignore fetch errors */ }
                 // auto-clear success after a short time
                 setTimeout(() => setSaveSuccess(null), 4000);
               } catch (err: any) {

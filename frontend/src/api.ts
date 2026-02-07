@@ -75,7 +75,9 @@ export async function addSlot(slot: Omit<Slot, 'id' | 'comments'>): Promise<Slot
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(slot)
   });
-  return parseJsonSafe(res);
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.error || `API error: ${res.status}`);
+  return data;
 }
 
 export async function addComment(slotId: string, userId: string, text: string): Promise<Comment> {
