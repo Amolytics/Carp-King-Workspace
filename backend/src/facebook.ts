@@ -211,6 +211,34 @@ router.post('/post', async (req, res) => {
   }
 });
 
+// Programmatic publish helper used by scheduler: returns the JSON result from FB or throws.
+export async function publishPost(pageId: string, accessToken: string, message?: string, imageUrl?: string): Promise<any> {
+  const fbBase = 'https://graph.facebook.com/v17.0';
+  let fbResp: Response | null = null;
+  if (imageUrl) {
+    const url = `${fbBase}/${encodeURIComponent(pageId)}/photos`;
+    const body = new URLSearchParams();
+    body.append('url', imageUrl);
+    if (message) body.append('caption', message);
+    body.append('access_token', accessToken);
+    fbResp = await fetch(url, { method: 'POST', body });
+  } else {
+    const url = `${fbBase}/${encodeURIComponent(pageId)}/feed`;
+    const body = new URLSearchParams();
+    if (message) body.append('message', message);
+    body.append('access_token', accessToken);
+    fbResp = await fetch(url, { method: 'POST', body });
+  }
+  if (!fbResp) throw new Error('Failed to call Facebook API');
+  const fbJson = await fbResp.json().catch(() => null);
+  if (!fbResp.ok) {
+    const err = new Error('Facebook API error: ' + JSON.stringify(fbJson));
+    (err as any).details = fbJson;
+    throw err;
+  }
+  return fbJson;
+}
+
 export default router;
 
 // Background: fetch analysis periodically and store last result

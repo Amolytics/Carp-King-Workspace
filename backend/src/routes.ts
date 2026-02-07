@@ -3,6 +3,7 @@ import fs from 'fs';
 import { emit } from './realtime';
 import { withDb, saveDb, queryOne, queryRows, DATA_FILE } from './sqlite';
 import { User, Slot, Meeting, Comment } from './types';
+import { publishPost } from './facebook';
 
 const router = Router();
 
@@ -174,12 +175,78 @@ router.get('/slots', async (req, res) => {
 router.post('/slots', async (req, res) => {
   await schemaReady;
   await withDb(db => {
-    const slot: Slot = { ...req.body, id: Date.now().toString(), comments: [] };
+    // Accepts: { imageUrl, content, scheduledAt }
+    const body: any = req.body || {};
+    const slot: Slot & any = { ...body, id: Date.now().toString(), comments: [], published: false };
+    // normalize scheduledAt if provided
+    if (slot.scheduledAt) {
+      try { slot.scheduledAt = new Date(slot.scheduledAt).toISOString(); } catch (e) { slot.scheduledAt = null; }
+    }
     db.run('INSERT INTO slots (id, data) VALUES (?, ?)', [slot.id, JSON.stringify(slot)]);
     saveDb(db);
     res.json(slot);
   });
 });
+
+// Scheduler: publish due slots to Facebook
+async function processScheduledSlots() {
+  try {
+    await schemaReady;
+    // load page credentials
+    let page: any = null;
+    await withDb(db => {
+      page = queryOne(db, 'SELECT pageId, accessToken FROM fb_page WHERE id = 1');
+    });
+    if (!page || !page.pageId || !page.accessToken) return;
+    const rows = [] as { rowid?: number; data: string; id?: string }[];
+    await withDb(db => {
+      const rs = queryRows<{ data: string }>(db, 'SELECT id, data FROM slots');
+      for (const r of rs) rows.push({ id: (r as any).id, data: r.data });
+    });
+    const now = Date.now();
+    for (const r of rows) {
+      try {
+        const slot = JSON.parse(r.data as string) as any;
+        if (!slot || slot.published) continue;
+        if (!slot.scheduledAt) continue;
+        const ts = new Date(slot.scheduledAt).getTime();
+        if (isNaN(ts)) continue;
+        if (ts <= now) {
+          // publish
+          try {
+            const result = await publishPost(page.pageId, page.accessToken, slot.content || slot.message || '', slot.imageUrl || '');
+            slot.published = true;
+            slot.publishedAt = new Date().toISOString();
+            slot.fbResult = result;
+            // save updated slot
+            await withDb(db => {
+              db.run('UPDATE slots SET data = ? WHERE id = ?', [JSON.stringify(slot), slot.id]);
+              saveDb(db);
+            });
+            emit('slot:published', { slotId: slot.id, result });
+          } catch (pubErr) {
+            console.error('Failed to publish slot', slot.id, pubErr);
+            // save last error
+            slot.publishError = String(pubErr?.message || pubErr);
+            await withDb(db => {
+              db.run('UPDATE slots SET data = ? WHERE id = ?', [JSON.stringify(slot), slot.id]);
+              saveDb(db);
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('processScheduledSlots: invalid slot row', r.id, err);
+      }
+    }
+  } catch (err) {
+    console.error('processScheduledSlots failed', err);
+  }
+}
+
+// Start scheduler: run every minute
+setInterval(() => {
+  processScheduledSlots().catch(err => console.error('scheduled publish failed', err));
+}, 1000 * 60);
 
 // Add comment to slot
 router.post('/slots/:slotId/comments', async (req, res) => {
