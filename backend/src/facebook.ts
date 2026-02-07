@@ -1,6 +1,8 @@
 // Facebook API integration stub
 // In a real app, use Facebook Graph API and store tokens securely
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import { withDb, saveDb, queryOne } from './sqlite';
 
 const router = express.Router();
@@ -18,6 +20,47 @@ const schemaReady = withDb(db => {
     'CREATE TABLE IF NOT EXISTS fb_analysis (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, data TEXT NOT NULL)'
   );
 });
+
+// Try to load page credentials from common JSON files and persist to DB
+async function loadCredentialsFromFiles() {
+  const candidates: string[] = [];
+  if (process.env.FB_PAGE_JSON) candidates.push(process.env.FB_PAGE_JSON);
+  candidates.push('/tmp/fb_page.json');
+  candidates.push(path.resolve(process.cwd(), 'data', 'fb_page.json'));
+  candidates.push(path.resolve(process.cwd(), 'config', 'fb_page.json'));
+  candidates.push(path.resolve(process.cwd(), 'fb_page.json'));
+
+  for (const p of candidates) {
+    if (!p) continue;
+    try {
+      if (!fs.existsSync(p)) continue;
+      const raw = fs.readFileSync(p, 'utf8');
+      const parsed = JSON.parse(raw);
+      const pageId = parsed.pageId || parsed.page_id || parsed.id || parsed.page?.pageId;
+      const pageName = parsed.pageName || parsed.page_name || parsed.name || parsed.page?.pageName;
+      const accessToken = parsed.accessToken || parsed.access_token || parsed.token || parsed.page?.accessToken;
+      if (pageId && pageName && accessToken) {
+        await withDb(db => {
+          const existing = queryOne(db, 'SELECT pageId, pageName FROM fb_page WHERE id = 1');
+          if (!existing) {
+            db.run('DELETE FROM fb_page');
+            db.run('INSERT INTO fb_page (id, pageId, pageName, accessToken) VALUES (1, ?, ?, ?)', [String(pageId), String(pageName), String(accessToken)]);
+            saveDb(db);
+            console.info('Loaded Facebook page credentials from', p);
+          } else if (existing.pageId !== String(pageId) || existing.pageName !== String(pageName)) {
+            db.run('UPDATE fb_page SET pageId = ?, pageName = ?, accessToken = ? WHERE id = 1', [String(pageId), String(pageName), String(accessToken)]);
+            saveDb(db);
+            console.info('Updated Facebook page credentials from', p);
+          }
+        });
+        // stop after first valid file
+        return;
+      }
+    } catch (err) {
+      console.warn('Failed to load FB credentials from', p, err?.message || err);
+    }
+  }
+}
 
 // Set Facebook Page credentials (admin only)
 router.post('/set-page', async (req, res) => {
