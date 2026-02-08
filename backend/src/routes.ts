@@ -7,6 +7,40 @@ import { publishPost } from './facebook';
 
 const router = Router();
 
+// Lightweight audit: log requests (method, path, user headers, small body preview)
+router.use((req, res, next) => {
+  try {
+    const userId = req.header('x-user-id') || '';
+    const role = req.header('x-user-role') || '';
+    const ip = (req.headers['x-forwarded-for'] as string) || req.ip || '';
+    let details = '';
+    try {
+      details = JSON.stringify(req.body || {});
+      if (details.length > 2000) details = details.slice(0, 2000) + '...';
+    } catch (e) {
+      details = '';
+    }
+    const ts = new Date().toISOString();
+    // don't block request routing on DB writes
+    schemaReady.then(() => {
+      withDb(db => {
+        try {
+          db.run(
+            'INSERT INTO audit (ts, method, path, userId, role, ip, details) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [ts, req.method, req.originalUrl || req.url, userId, role, String(ip), details]
+          );
+          saveDb(db);
+        } catch (e) {
+          console.warn('audit insert failed', e);
+        }
+      }).catch(() => {});
+    }).catch(() => {});
+  } catch (e) {
+    // ignore any audit errors
+  }
+  next();
+});
+
 const defaultAdmin: User = {
   id: 'admin-craig',
   name: 'craig needham',
@@ -24,6 +58,11 @@ const schemaReady = withDb(db => {
   db.run('CREATE TABLE IF NOT EXISTS meetings (id TEXT PRIMARY KEY, data TEXT NOT NULL)');
   db.run(
     'CREATE TABLE IF NOT EXISTS global_chat (id TEXT PRIMARY KEY, user TEXT NOT NULL, text TEXT NOT NULL, createdAt TEXT NOT NULL)'
+  );
+
+  // audit log for tracking user actions and requests
+  db.run(
+    'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, method TEXT, path TEXT, userId TEXT, role TEXT, ip TEXT, details TEXT)'
   );
 
   const adminExists = queryOne<{ id: string }>(db, 'SELECT id FROM users WHERE id = ?', [defaultAdmin.id]);
@@ -256,6 +295,19 @@ router.post('/admin/publish-due', (req, res) => {
   processScheduledSlots().then(() => res.json({ success: true, message: 'Publish job started' })).catch(err => {
     console.error('admin publish-due failed', err);
     res.status(500).json({ success: false, message: 'Publish job failed', details: String(err) });
+  });
+});
+
+// Admin: fetch recent audit logs (protected)
+router.get('/admin/audit', (req, res) => {
+  if (!requireBackupToken(req, res)) return;
+  const limit = parseInt(String(req.query.limit || '100'), 10) || 100;
+  withDb(db => {
+    const rows = queryRows<any>(db, 'SELECT id, ts, method, path, userId, role, ip, details FROM audit ORDER BY id DESC LIMIT ?', [limit]);
+    res.json(rows || []);
+  }).catch(err => {
+    console.error('fetch audit failed', err);
+    res.status(500).json({ error: 'Failed to fetch audit logs' });
   });
 });
 

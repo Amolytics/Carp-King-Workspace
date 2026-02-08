@@ -32,18 +32,25 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div style={{
+    <div className="login-root" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
       background: 'none',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
+      <video className="login-bg-video" autoPlay muted loop playsInline preload="auto" aria-hidden="true">
+        <source src="/underwater.mp4" type="video/mp4" />
+      </video>
       <form
         onSubmit={handleSubmit}
         style={{
           background: 'rgba(30,32,24,0.98)',
+          position: 'relative',
+          zIndex: 2,
           padding: 40,
           borderRadius: 16,
           boxShadow: '0 6px 32px #000a',

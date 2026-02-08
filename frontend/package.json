@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node node_modules/vite/bin/vite.js --config vite.config.mjs",
+    "dev": "node node_modules/vite/bin/vite.js --config vite.config.mjs",
     "build": "node node_modules/vite/bin/vite.js build --config vite.config.mjs"
   },
   "dependencies": {
