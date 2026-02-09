@@ -1,3 +1,13 @@
+
+import { Router } from 'express';
+import fs from 'fs';
+import { emit } from './realtime';
+import { withDb, saveDb, queryOne, queryRows, DATA_FILE } from './sqlite';
+import { User, Slot, Meeting, Comment } from './types';
+import { publishPost } from './facebook';
+
+const router = Router();
+
 // Admin: change user password
 router.post('/users/:userId/password', async (req, res) => {
   await schemaReady;
@@ -19,14 +29,6 @@ router.post('/users/:userId/password', async (req, res) => {
     res.json({ success: true });
   });
 });
-import { Router } from 'express';
-import fs from 'fs';
-import { emit } from './realtime';
-import { withDb, saveDb, queryOne, queryRows, DATA_FILE } from './sqlite';
-import { User, Slot, Meeting, Comment } from './types';
-import { publishPost } from './facebook';
-
-const router = Router();
 
 // Lightweight audit: log requests (method, path, user headers, small body preview)
 router.use((req, res, next) => {
