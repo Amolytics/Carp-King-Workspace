@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { login as apiLogin, signup as apiSignup } from '../api';
 import { useAuth } from './AuthContext';
+import FacebookLoginButton from './FacebookLoginButton';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -178,6 +179,7 @@ const Login: React.FC = () => {
         >
           {isSignup ? 'Sign Up' : 'Login'}
         </button>
+        <FacebookLoginButton />
         <button
           type="button"
           onClick={() => setIsSignup(s => !s)}
