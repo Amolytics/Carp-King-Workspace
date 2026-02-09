@@ -3,6 +3,7 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { withDb, saveDb, queryOne } from './sqlite';
 
 const router = express.Router();
@@ -19,6 +20,7 @@ const schemaReady = withDb(db => {
   db.run(
     'CREATE TABLE IF NOT EXISTS fb_analysis (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, data TEXT NOT NULL)'
   );
+  db.run('CREATE TABLE IF NOT EXISTS fb_deletion (id INTEGER PRIMARY KEY AUTOINCREMENT, userId TEXT NOT NULL, confirmationCode TEXT NOT NULL, ts INTEGER NOT NULL)');
 });
 
 // Try to load page credentials from common JSON files and persist to DB
@@ -65,6 +67,40 @@ async function loadCredentialsFromFiles() {
 // Ensure credentials are loaded on module import/startup
 loadCredentialsFromFiles().catch(err => console.warn('loadCredentialsFromFiles error', err));
 
+function base64UrlDecode(str: string) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return Buffer.from(str, 'base64').toString('utf8');
+}
+
+function parseSignedRequest(signedRequest: string) {
+  try {
+    const [encodedSig, encodedPayload] = signedRequest.split('.');
+    const sig = Buffer.from(encodedSig.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    const payload = JSON.parse(base64UrlDecode(encodedPayload));
+    const appSecret = process.env.FB_APP_SECRET || '';
+    if (appSecret) {
+      const expectedSig = crypto.createHmac('sha256', appSecret).update(encodedPayload).digest();
+      if (!crypto.timingSafeEqual(expectedSig, sig)) {
+        throw new Error('Invalid signature');
+      }
+    }
+    return payload;
+  } catch (err) {
+    return null;
+  }
+}
+
+function appsecretProof(accessToken: string) {
+  const appSecret = process.env.FB_APP_SECRET || '';
+  if (!appSecret || !accessToken) return '';
+  try {
+    return crypto.createHmac('sha256', appSecret).update(accessToken).digest('hex');
+  } catch (e) {
+    return '';
+  }
+}
+
 // Status endpoint: reports whether page credentials exist and token appears valid
 router.get('/status', async (req, res) => {
   await schemaReady;
@@ -75,7 +111,10 @@ router.get('/status', async (req, res) => {
   if (!details) return res.json({ connected: false, message: 'No page configured' });
   try {
     const fbBase = 'https://graph.facebook.com/v17.0';
-    const resp = await fetch(`${fbBase}/${encodeURIComponent(details.pageId)}?fields=id,name&access_token=${encodeURIComponent(details.accessToken)}`);
+    const proof = appsecretProof(details.accessToken);
+    let statusUrl = `${fbBase}/${encodeURIComponent(details.pageId)}?fields=id,name&access_token=${encodeURIComponent(details.accessToken)}`;
+    if (proof) statusUrl += `&appsecret_proof=${encodeURIComponent(proof)}`;
+    const resp = await fetch(statusUrl);
     const j = await resp.json().catch(() => null);
     if (!resp.ok) return res.json({ connected: false, details: j });
     return res.json({ connected: true, page: j });
@@ -127,7 +166,9 @@ router.post('/set-user-token', async (req, res) => {
   const { accessToken } = req.body as Partial<FacebookUser>;
   if (!accessToken) return res.status(400).json({ success: false, message: 'accessToken required' });
   try {
-    const meResp = await fetch(`https://graph.facebook.com/v17.0/me?access_token=${encodeURIComponent(accessToken)}`);
+    const proof = appsecretProof(accessToken);
+    const meUrl = `https://graph.facebook.com/v17.0/me?access_token=${encodeURIComponent(accessToken)}${proof ? `&appsecret_proof=${encodeURIComponent(proof)}` : ''}`;
+    const meResp = await fetch(meUrl);
     const meJson = await meResp.json().catch(() => null);
     if (!meResp.ok || !meJson || !meJson.id) {
       return res.status(400).json({ success: false, message: 'Invalid user access token', details: meJson });
@@ -185,18 +226,21 @@ router.post('/post', async (req, res) => {
 
     const fbBase = 'https://graph.facebook.com/v17.0';
     let fbResp: Response | null = null;
+    const proof = appsecretProof(accessToken);
     if (imageUrl) {
       const url = `${fbBase}/${encodeURIComponent(pageId)}/photos`;
       const body = new URLSearchParams();
       body.append('url', imageUrl);
       if (message) body.append('caption', message);
       body.append('access_token', accessToken);
+      if (proof) body.append('appsecret_proof', proof);
       fbResp = await fetch(url, { method: 'POST', body });
     } else {
       const url = `${fbBase}/${encodeURIComponent(pageId)}/feed`;
       const body = new URLSearchParams();
       if (message) body.append('message', message);
       body.append('access_token', accessToken);
+      if (proof) body.append('appsecret_proof', proof);
       fbResp = await fetch(url, { method: 'POST', body });
     }
     if (!fbResp) throw new Error('Failed to call Facebook API');
@@ -209,6 +253,96 @@ router.post('/post', async (req, res) => {
     console.error('facebook.post handler error:', err);
     return res.status(500).json({ success: false, message: (err as Error)?.message ?? 'Internal error' });
   }
+});
+
+async function performDataDeletion(userId: string) {
+  await withDb(db => {
+    try {
+      // Remove any fb_user entry matching this userId
+      db.run('DELETE FROM fb_user WHERE userId = ?', [String(userId)]);
+    } catch (e) {
+      // ignore
+    }
+    try {
+      // Remove any application user records that match (by id, name, or chatUsername)
+      db.run('DELETE FROM users WHERE id = ? OR name = ? OR chatUsername = ?', [String(userId), String(userId), String(userId)]);
+    } catch (e) {}
+    try {
+      // Remove global chat entries by this user identifier
+      db.run('DELETE FROM global_chat WHERE user = ?', [String(userId)]);
+    } catch (e) {}
+    // record deletion event
+    const confirmation = crypto.randomBytes(12).toString('hex');
+    try {
+      const ts = Math.floor(Date.now() / 1000);
+      const stmt = db.prepare('INSERT INTO fb_deletion (userId, confirmationCode, ts) VALUES (?, ?, ?)');
+      stmt.run([String(userId), confirmation, ts]);
+      stmt.free && stmt.free();
+      saveDb(db);
+    } catch (e) {}
+    return true;
+  });
+  return true;
+}
+
+// Deauthorize callback — Facebook calls this when a user removes the app
+router.post('/deauthorize', async (req, res) => {
+  try {
+    const body = req.body || {};
+    let userId: string | null = null;
+    if (body.signed_request) {
+      const parsed = parseSignedRequest(body.signed_request);
+      if (parsed && parsed.user_id) userId = String(parsed.user_id);
+    }
+    if (!userId && body.user_id) userId = String(body.user_id);
+    if (!userId) return res.status(400).json({ success: false, message: 'No user identifier provided' });
+    await performDataDeletion(userId);
+    // Respond 200 OK
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('deauthorize handler error', err);
+    return res.status(500).json({ success: false, message: 'Internal error' });
+  }
+});
+
+// Data Deletion Request handler — respond with JSON containing status URL and confirmation_code
+router.post('/data_deletion', async (req, res) => {
+  try {
+    const body = req.body || {};
+    let userId: string | null = null;
+    if (body.signed_request) {
+      const parsed = parseSignedRequest(body.signed_request);
+      if (parsed && parsed.user_id) userId = String(parsed.user_id);
+    }
+    if (!userId && body.user_id) userId = String(body.user_id);
+    if (!userId) return res.status(400).json({ success: false, message: 'No user identifier provided' });
+    // perform deletion asynchronously
+    await performDataDeletion(userId);
+    // build status URL for Facebook to show to user
+    const statusUrl = `https://carp-king-workspace-production-450e.up.railway.app/facebook-deletion-status/${encodeURIComponent(userId)}`;
+    // fetch most recent confirmation code from DB
+    let confirmation = '';
+    await withDb(db => {
+      const row = queryOne<{ confirmationCode: string }>(db, 'SELECT confirmationCode FROM fb_deletion WHERE userId = ? ORDER BY id DESC LIMIT 1', [userId]);
+      if (row && row.confirmationCode) confirmation = row.confirmationCode;
+    });
+    if (!confirmation) confirmation = crypto.randomBytes(12).toString('hex');
+    return res.json({ url: statusUrl, confirmation_code: confirmation });
+  } catch (err) {
+    console.error('data_deletion handler error', err);
+    return res.status(500).json({ success: false, message: 'Internal error' });
+  }
+});
+
+// Public status page used by Facebook after deletion request
+router.get('/deletion-status/:userId', async (req, res) => {
+  const { userId } = req.params;
+  let row: any = null;
+  await withDb(db => {
+    row = queryOne(db, 'SELECT confirmationCode, ts FROM fb_deletion WHERE userId = ? ORDER BY id DESC LIMIT 1', [userId]);
+  });
+  if (!row) return res.status(404).json({ success: false, message: 'No deletion record found' });
+  return res.json({ success: true, userId, confirmation_code: row.confirmationCode, ts: row.ts });
 });
 
 // Programmatic publish helper used by scheduler: returns the JSON result from FB or throws.
@@ -256,11 +390,14 @@ async function fetchPageAnalysis() {
   const fbBase = 'https://graph.facebook.com/v17.0';
   try {
     // Fetch basic page fields
-    const pageResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}?fields=name,about,fan_count,followers_count&access_token=${encodeURIComponent(token)}`);
+    const proof = appsecretProof(token);
+    const pageUrl = `${fbBase}/${encodeURIComponent(pageId)}?fields=name,about,fan_count,followers_count&access_token=${encodeURIComponent(token)}${proof ? `&appsecret_proof=${encodeURIComponent(proof)}` : ''}`;
+    const pageResp = await fetch(pageUrl);
     const pageJson = await pageResp.json().catch(() => null);
     // Fetch recent posts (last 5)
     // Request summary counts for reactions and comments, shares, and include thumbnails/attachments
-    const postsResp = await fetch(`${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time,full_picture,attachments{media,media_type,url,subattachments{media}},reactions.summary(true).limit(0),comments.summary(true).limit(0),shares&access_token=${encodeURIComponent(token)}`);
+    const postsUrl = `${fbBase}/${encodeURIComponent(pageId)}/posts?limit=5&fields=message,created_time,full_picture,attachments{media,media_type,url,subattachments{media}},reactions.summary(true).limit(0),comments.summary(true).limit(0),shares&access_token=${encodeURIComponent(token)}${proof ? `&appsecret_proof=${encodeURIComponent(proof)}` : ''}`;
+    const postsResp = await fetch(postsUrl);
     const postsJson = await postsResp.json().catch(() => null);
     const summary = { ts: Date.now(), page: pageJson, posts: postsJson };
     await withDb(db => {
