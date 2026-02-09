@@ -357,12 +357,14 @@ export async function publishPost(pageId: string, accessToken: string, message?:
     body.append('url', imageUrl);
     if (message) body.append('caption', message);
     body.append('access_token', accessToken);
+    body.append('published', 'true'); // Ensure photo post is public
     fbResp = await fetch(url, { method: 'POST', body });
   } else {
     const url = `${fbBase}/${encodeURIComponent(pageId)}/feed`;
     const body = new URLSearchParams();
     if (message) body.append('message', message);
     body.append('access_token', accessToken);
+    body.append('published', 'true'); // Ensure feed post is public
     fbResp = await fetch(url, { method: 'POST', body });
   }
   if (!fbResp) throw new Error('Failed to call Facebook API');
