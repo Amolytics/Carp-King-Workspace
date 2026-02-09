@@ -318,8 +318,10 @@ router.post('/data_deletion', async (req, res) => {
     if (!userId) return res.status(400).json({ success: false, message: 'No user identifier provided' });
     // perform deletion asynchronously
     await performDataDeletion(userId);
-    // build status URL for Facebook to show to user
-    const statusUrl = `https://carp-king-workspace-production-450e.up.railway.app/facebook-deletion-status/${encodeURIComponent(userId)}`;
+    // build status URL for Facebook to show to user (use this backend's host)
+    const host = (req.get && req.get('host')) || 'sublime-art-production-4fe1.up.railway.app';
+    const proto = (req.headers && (req.headers['x-forwarded-proto'] as string)) || req.protocol || 'https';
+    const statusUrl = `${proto}://${host}/api/facebook/deletion-status/${encodeURIComponent(userId)}`;
     // fetch most recent confirmation code from DB
     let confirmation = '';
     await withDb(db => {
