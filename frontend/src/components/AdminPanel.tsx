@@ -244,40 +244,8 @@ function AdminPanel() {
                   </td>
                 </tr>
               ))}
-            // Inline component for changing a user's password
-            function ChangePasswordButton({ userId, userName }: { userId: string, userName: string }) {
-              const [show, setShow] = useState(false);
-              const [pw, setPw] = useState('');
-              const [msg, setMsg] = useState<string | null>(null);
-              const handleChange = async () => {
-                if (!pw || pw.length < 3) {
-                  setMsg('Password must be at least 3 characters.');
-                  return;
-                }
-                try {
-                  await setUserPassword(userId, pw);
-                  setMsg('Password updated!');
-                  setPw('');
-                  setTimeout(() => { setShow(false); setMsg(null); }, 1200);
-                } catch {
-                  setMsg('Failed to update password.');
-                }
-              };
-              return (
-                <div style={{ marginTop: 2 }}>
-                  <button style={{ ...buttonStyle, background: '#ffe066', color: '#23241a', fontSize: 12, padding: '2px 8px' }} onClick={() => setShow(s => !s)}>
-                    {show ? 'Cancel' : 'Change PW'}
-                  </button>
-                  {show && (
-                    <div style={{ marginTop: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder={`New password for ${userName}`} style={{ padding: 4, borderRadius: 6, border: '1.5px solid #ffe06699', background: '#23241a', color: '#ffe066', fontSize: 12 }} />
-                      <button style={{ ...buttonStyle, fontSize: 12, padding: '2px 8px' }} onClick={handleChange}>Set Password</button>
-                      {msg && <div style={{ color: msg.includes('updated') ? '#7fff7f' : 'red', fontSize: 12 }}>{msg}</div>}
-                    </div>
-                  )}
-                </div>
-              );
-            }
+            {/* End of users.map */}
+
             </tbody>
           </table>
         )}
