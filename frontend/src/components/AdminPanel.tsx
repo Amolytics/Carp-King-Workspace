@@ -1,43 +1,9 @@
-// Inline component for changing a user's password
-function ChangePasswordButton({ userId, userName }: { userId: string, userName: string }) {
-  const [show, setShow] = React.useState(false);
-  const [pw, setPw] = React.useState('');
-  const [msg, setMsg] = React.useState<string | null>(null);
-  const handleChange = async () => {
-    if (!pw || pw.length < 3) {
-      setMsg('Password must be at least 3 characters.');
-      return;
-    }
-    try {
-      await setUserPassword(userId, pw);
-      setMsg('Password updated!');
-      setPw('');
-      setTimeout(() => { setShow(false); setMsg(null); }, 1200);
-    } catch {
-      setMsg('Failed to update password.');
-    }
-  };
-  return (
-    <div style={{ marginTop: 2 }}>
-      <button style={{ ...buttonStyle, background: '#ffe066', color: '#23241a', fontSize: 12, padding: '2px 8px' }} onClick={() => setShow(s => !s)}>
-        {show ? 'Cancel' : 'Change PW'}
-      </button>
-      {show && (
-        <div style={{ marginTop: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder={`New password for ${userName}`} style={{ padding: 4, borderRadius: 6, border: '1.5px solid #ffe06699', background: '#23241a', color: '#ffe066', fontSize: 12 }} />
-          <button style={{ ...buttonStyle, fontSize: 12, padding: '2px 8px' }} onClick={handleChange}>Set Password</button>
-          {msg && <div style={{ color: msg.includes('updated') ? '#7fff7f' : 'red', fontSize: 12 }}>{msg}</div>}
-        </div>
-      )}
-    </div>
-  );
-}
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { clearUsers, API_URL } from '../api';
 import FacebookSettings from './FacebookSettings';
 import AdminLogs from './AdminLogs';
-import { useCallback } from 'react';
+
 
 const panelStyle: React.CSSProperties = {
   background: 'rgba(30,32,24,0.97)',
@@ -89,6 +55,16 @@ async function setUserPassword(userId: string, password: string): Promise<any> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
     body: JSON.stringify({ password })
+  });
+  return res.json();
+}
+
+
+// Delete a user (admin only)
+async function deleteUser(userId: string): Promise<any> {
+  const res = await fetch(`${API_URL}/users/${userId}`, {
+    method: 'DELETE',
+    headers: { 'x-user-role': 'admin' }
   });
   return res.json();
 }
@@ -158,6 +134,24 @@ function AdminPanel() {
   const refreshUsers = () => {
     setUserLoading(true);
     fetchUsers().then(setUsers).finally(() => setUserLoading(false));
+  };
+
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  const handleDeleteUser = async (userId: string) => {
+    setLoading(true);
+    try {
+      const res = await deleteUser(userId);
+      setMessage(res?.message || 'User deleted.');
+      setOpenMenuId(null);
+      // refresh list
+      setUserLoading(true);
+      fetchUsers().then(setUsers).finally(() => setUserLoading(false));
+    } catch (err) {
+      setMessage('Failed to delete user.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClearUsers = async () => {
@@ -262,16 +256,50 @@ function AdminPanel() {
               {users.map(u => (
                 <tr key={u.id}>
                   <td style={{ padding: 3 }}>{u.name}</td>
-                  <td style={{ padding: 3 }}>{u.chatUsername}</td>
+                  <td style={{ padding: 3, position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>{u.chatUsername}</span>
+                      <button
+                        style={{ ...buttonStyle, padding: '2px 6px', fontSize: 12 }}
+                        onClick={() => setOpenMenuId(openMenuId === u.id ? null : u.id)}
+                        aria-label="Open user menu"
+                      >
+                        ⋮
+                      </button>
+                    </div>
+                    {openMenuId === u.id && (
+                      <div style={{ position: 'absolute', top: 28, left: 0, background: '#23241a', border: '1px solid #ffe06633', borderRadius: 6, padding: 8, zIndex: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {u.role !== 'admin' && (
+                          <button
+                            style={{ ...buttonStyle, fontSize: 12 }}
+                            onClick={() => { handleSetRole(u.id, 'admin'); setOpenMenuId(null); }}
+                          >
+                            Make Admin
+                          </button>
+                        )}
+                        {u.role !== 'editor' && (
+                          <button
+                            style={{ ...buttonStyle, fontSize: 12 }}
+                            onClick={() => { handleSetRole(u.id, 'editor'); setOpenMenuId(null); }}
+                          >
+                            Make Editor
+                          </button>
+                        )}
+                        <button
+                          style={{ ...buttonStyle, background: '#c0392b', fontSize: 12 }}
+                          onClick={() => {
+                            if (confirm(`Delete user ${u.name}? This cannot be undone.`)) {
+                              handleDeleteUser(u.id);
+                            }
+                          }}
+                        >
+                          Remove user
+                        </button>
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding: 3 }}>{u.role}</td>
-                  <td style={{ padding: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {u.role !== 'admin' && (
-                      <button style={buttonStyle} onClick={() => handleSetRole(u.id, 'admin')}>Make Admin</button>
-                    )}
-                    {u.role !== 'editor' && (
-                      <button style={buttonStyle} onClick={() => handleSetRole(u.id, 'editor')}>Make Editor</button>
-                    )}
-                    <ChangePasswordButton userId={u.id} userName={u.name} />
+                  <td style={{ padding: 3 }}>
                     {u.role === 'admin' && (
                       <span style={{ color: '#7fff7f', fontWeight: 700 }}>Admin</span>
                     )}
