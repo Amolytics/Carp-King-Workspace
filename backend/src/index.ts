@@ -70,6 +70,8 @@ io.on('connection', socket => {
 
 app.use(cors());
 app.use(express.json());
+// Accept URL-encoded form bodies (Facebook sends signed_request as form data)
+app.use(express.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
   res.send('Carp King Backend API');
