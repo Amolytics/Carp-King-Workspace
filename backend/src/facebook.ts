@@ -351,6 +351,7 @@ router.get('/deletion-status/:userId', async (req, res) => {
 export async function publishPost(pageId: string, accessToken: string, message?: string, imageUrl?: string): Promise<any> {
   const fbBase = 'https://graph.facebook.com/v17.0';
   let fbResp: Response | null = null;
+  const proof = appsecretProof(accessToken);
   if (imageUrl) {
     const url = `${fbBase}/${encodeURIComponent(pageId)}/photos`;
     const body = new URLSearchParams();
@@ -358,6 +359,7 @@ export async function publishPost(pageId: string, accessToken: string, message?:
     if (message) body.append('caption', message);
     body.append('access_token', accessToken);
     body.append('published', 'true'); // Ensure photo post is public
+    if (proof) body.append('appsecret_proof', proof);
     fbResp = await fetch(url, { method: 'POST', body });
   } else {
     const url = `${fbBase}/${encodeURIComponent(pageId)}/feed`;
@@ -365,6 +367,7 @@ export async function publishPost(pageId: string, accessToken: string, message?:
     if (message) body.append('message', message);
     body.append('access_token', accessToken);
     body.append('published', 'true'); // Ensure feed post is public
+    if (proof) body.append('appsecret_proof', proof);
     fbResp = await fetch(url, { method: 'POST', body });
   }
   if (!fbResp) throw new Error('Failed to call Facebook API');

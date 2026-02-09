@@ -43,8 +43,18 @@ async function fetchUsers(): Promise<any[]> {
 async function setUserRole(userId: string, role: string): Promise<any> {
   const res = await fetch(`${API_URL}/users/${userId}/role`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
     body: JSON.stringify({ role })
+  });
+  return res.json();
+}
+
+// Change user password (admin only)
+async function setUserPassword(userId: string, password: string): Promise<any> {
+  const res = await fetch(`${API_URL}/users/${userId}/password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+    body: JSON.stringify({ password })
   });
   return res.json();
 }
@@ -59,6 +69,9 @@ function maskToken(t?: string) {
     return '';
   }
 }
+const ADMIN_PW_KEY = 'adminPassword';
+const EDITOR_PW_KEY = 'editorPassword';
+
 function AdminPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,6 +81,15 @@ function AdminPanel() {
   const [backupToken, setBackupToken] = useState('');
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [showLogs, setShowLogs] = useState(false);
+  const [adminPw, setAdminPw] = useState(() => localStorage.getItem(ADMIN_PW_KEY) || 'fred flintstone');
+  const [editorPw, setEditorPw] = useState(() => localStorage.getItem(EDITOR_PW_KEY) || 'donald duck');
+  const [pwMsg, setPwMsg] = useState<string | null>(null);
+    const handleSavePasswords = () => {
+      localStorage.setItem(ADMIN_PW_KEY, adminPw);
+      localStorage.setItem(EDITOR_PW_KEY, editorPw);
+      setPwMsg('Passwords updated!');
+      setTimeout(() => setPwMsg(null), 2000);
+    };
   const [fbStatus, setFbStatus] = useState<{ connected: boolean; page?: any; message?: string } | null>(null);
   const [fbDetails, setFbDetails] = useState<any | null>(null);
 
@@ -178,7 +200,18 @@ function AdminPanel() {
       </div>
       {message && <div style={{ color: message.includes('Failed') ? 'red' : '#ffe066', marginTop: 2 }}>{message}</div>}
 
-      {/* User list always visible, minimal padding */}
+      {/* Admin/editor password change section */}
+      <div style={{ width: '100%', margin: '6px 0 12px 0', background: 'rgba(40,42,24,0.98)', borderRadius: 6, padding: 12 }}>
+        <h3 style={{ color: '#ffe066', marginBottom: 2 }}>Change Admin/Editor Passwords</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340 }}>
+          <label style={{ color: '#ffe066', fontWeight: 600 }}>Admin Password</label>
+          <input type="text" value={adminPw} onChange={e => setAdminPw(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1.5px solid #ffe06699', background: '#23241a', color: '#ffe066' }} />
+          <label style={{ color: '#ffe066', fontWeight: 600 }}>Editor Password</label>
+          <input type="text" value={editorPw} onChange={e => setEditorPw(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1.5px solid #ffe06699', background: '#23241a', color: '#ffe066' }} />
+          <button style={buttonStyle} onClick={handleSavePasswords}>Save Passwords</button>
+          {pwMsg && <div style={{ color: '#7fff7f', marginTop: 2 }}>{pwMsg}</div>}
+        </div>
+      </div>
       <div style={{ width: '100%', margin: '6px 0 6px 0' }}>
         <h3 style={{ color: '#ffe066', marginBottom: 2 }}>Registered Users</h3>
         {userLoading ? <div>Loading users...</div> : (
@@ -197,16 +230,54 @@ function AdminPanel() {
                   <td style={{ padding: 3 }}>{u.name}</td>
                   <td style={{ padding: 3 }}>{u.chatUsername}</td>
                   <td style={{ padding: 3 }}>{u.role}</td>
-                  <td style={{ padding: 3 }}>
+                  <td style={{ padding: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {u.role !== 'admin' && (
                       <button style={buttonStyle} onClick={() => handleSetRole(u.id, 'admin')}>Make Admin</button>
                     )}
+                    {u.role !== 'editor' && (
+                      <button style={buttonStyle} onClick={() => handleSetRole(u.id, 'editor')}>Make Editor</button>
+                    )}
+                    <ChangePasswordButton userId={u.id} userName={u.name} />
                     {u.role === 'admin' && (
                       <span style={{ color: '#7fff7f', fontWeight: 700 }}>Admin</span>
                     )}
                   </td>
                 </tr>
               ))}
+            // Inline component for changing a user's password
+            function ChangePasswordButton({ userId, userName }: { userId: string, userName: string }) {
+              const [show, setShow] = useState(false);
+              const [pw, setPw] = useState('');
+              const [msg, setMsg] = useState<string | null>(null);
+              const handleChange = async () => {
+                if (!pw || pw.length < 3) {
+                  setMsg('Password must be at least 3 characters.');
+                  return;
+                }
+                try {
+                  await setUserPassword(userId, pw);
+                  setMsg('Password updated!');
+                  setPw('');
+                  setTimeout(() => { setShow(false); setMsg(null); }, 1200);
+                } catch {
+                  setMsg('Failed to update password.');
+                }
+              };
+              return (
+                <div style={{ marginTop: 2 }}>
+                  <button style={{ ...buttonStyle, background: '#ffe066', color: '#23241a', fontSize: 12, padding: '2px 8px' }} onClick={() => setShow(s => !s)}>
+                    {show ? 'Cancel' : 'Change PW'}
+                  </button>
+                  {show && (
+                    <div style={{ marginTop: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder={`New password for ${userName}`} style={{ padding: 4, borderRadius: 6, border: '1.5px solid #ffe06699', background: '#23241a', color: '#ffe066', fontSize: 12 }} />
+                      <button style={{ ...buttonStyle, fontSize: 12, padding: '2px 8px' }} onClick={handleChange}>Set Password</button>
+                      {msg && <div style={{ color: msg.includes('updated') ? '#7fff7f' : 'red', fontSize: 12 }}>{msg}</div>}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             </tbody>
           </table>
         )}

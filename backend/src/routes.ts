@@ -1,3 +1,24 @@
+// Admin: change user password
+router.post('/users/:userId/password', async (req, res) => {
+  await schemaReady;
+  const { userId } = req.params;
+  const { password } = req.body as { password?: string };
+  // Only allow if admin (x-user-role header)
+  const userRole = req.header('x-user-role') || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Only admin can change user passwords.' });
+  }
+  if (!password || typeof password !== 'string' || password.length < 3) {
+    return res.status(400).json({ error: 'Password required (min 3 chars).' });
+  }
+  await withDb(db => {
+    const user = queryOne(db, 'SELECT id FROM users WHERE id = ?', [userId]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    db.run('UPDATE users SET password = ? WHERE id = ?', [password, userId]);
+    saveDb(db);
+    res.json({ success: true });
+  });
+});
 import { Router } from 'express';
 import fs from 'fs';
 import { emit } from './realtime';

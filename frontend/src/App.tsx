@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ThemeSettings from './components/ThemeSettings';
 import SlotList from './components/SlotList';
 import MeetingList from './components/MeetingList';
 import ImageUpload from './components/ImageUpload';
@@ -110,6 +111,18 @@ const MainApp: React.FC = () => {
     const stored = localStorage.getItem(key);
     setChatUnread(stored ? Number(stored) || 0 : 0);
     seenMessageIdsRef.current = new Set();
+    // Apply theme colors and logo from localStorage, or use neutral defaults
+    const theme = localStorage.getItem('customTheme');
+    let t = null;
+    if (theme) {
+      try {
+        t = JSON.parse(theme);
+      } catch {}
+    }
+    const primary = t?.primary || '#e0e0e0';
+    const secondary = t?.secondary || '#23241a';
+    document.documentElement.style.setProperty('--primary', primary);
+    document.documentElement.style.setProperty('--secondary', secondary);
   }, [user.id]);
 
   useEffect(() => {
@@ -152,17 +165,33 @@ const MainApp: React.FC = () => {
     return <WelcomePage user={user} onNavigate={setPage} unreadCount={chatUnread} />;
   }
 
+  // Show custom logo if set
+  let customLogo = null;
+  if (typeof window !== 'undefined') {
+    const theme = localStorage.getItem('customTheme');
+    if (theme) {
+      try {
+        const t = JSON.parse(theme);
+        customLogo = t.logo || null;
+      } catch { customLogo = null; }
+    }
+  }
+
   return (
     <ErrorBoundary>
       <div className="app-shell">
         <div className="app-header">
-          <img src="/carp_king_logo.png" alt="Carp King Logo" className="app-logo" />
+          {customLogo ? (
+            <img src={customLogo} alt="Logo" className="app-logo" style={{ height: 40, width: 'auto', borderRadius: 6, background: '#fff', marginRight: 8 }} />
+          ) : (
+            <img src="/carp_king_logo.png" alt="Carp King Logo" className="app-logo" />
+          )}
           <span className="app-title">Team Workspace</span>
           <div className="app-nav">
             <button onClick={() => setPage('welcome')} className="btn btn-nav">Home</button>
             <button onClick={() => setPage('slots')} className="btn btn-nav">Slot Planner</button>
             <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
-                    <button onClick={() => setPage('analysis')} className="btn btn-nav">Analysis</button>
+            <button onClick={() => setPage('analysis')} className="btn btn-nav">Analysis</button>
             <button onClick={() => setPage('chat')} className="btn btn-nav btn-badge">
               <span>Global Chat</span>
               {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
@@ -234,6 +263,8 @@ const MainApp: React.FC = () => {
           {page === 'slots' && <PlannerLayout />}
           {page === 'meetings' && <MeetingsPage />}
           {page === 'raffles' && <LuckyDraws />}
+          {/* Theme settings only for admin */}
+          {user.role === 'admin' && <ThemeSettings />}
         </div>
       </div>
     </ErrorBoundary>

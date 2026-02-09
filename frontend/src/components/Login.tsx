@@ -10,19 +10,38 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [chatUsername, setChatUsername] = useState('');
   const [isSignup, setIsSignup] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Read admin/editor passwords from localStorage if set
+  const ADMIN_PASSWORD = typeof window !== 'undefined' && localStorage.getItem('adminPassword') || 'fred flintstone';
+  const EDITOR_PASSWORD = typeof window !== 'undefined' && localStorage.getItem('editorPassword') || 'donald duck';
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    // Require correct admin or editor password
+    let role: 'admin' | 'editor' | null = null;
+    if (adminPassword === ADMIN_PASSWORD) {
+      role = 'admin';
+    } else if (adminPassword === EDITOR_PASSWORD) {
+      role = 'editor';
+    } else {
+      setError('Password incorrect. Only authorized editors/admins may log in.');
+      setLoading(false);
+      return;
+    }
     try {
       let user;
       if (isSignup) {
         user = await apiSignup(name, password, chatUsername);
       } else {
         user = await apiLogin(name, password);
+      }
+      // Attach role to user object if possible
+      if (user && typeof user === 'object') {
+        user.role = role;
       }
       login(user);
     } catch (err: any) {
@@ -158,6 +177,25 @@ const Login: React.FC = () => {
           )}
         </div>
 
+        <label style={{ color: '#ffe066', alignSelf: 'flex-start', marginBottom: 4, fontWeight: 600 }}>Admin/Editor Password</label>
+        <input
+          type="password"
+          placeholder="Enter admin/editor password"
+          value={adminPassword}
+          onChange={e => setAdminPassword(e.target.value)}
+          required
+          style={{
+            marginBottom: 18,
+            padding: 10,
+            borderRadius: 6,
+            border: '1.5px solid #ffe06699',
+            width: '100%',
+            fontSize: 16,
+            background: '#23241a',
+            color: '#ffe066',
+            outline: 'none',
+          }}
+        />
         <button
           type="submit"
           disabled={loading}
