@@ -7,6 +7,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": "http://localhost:4000",
+      // Proxy socket.io websocket upgrades to the backend during local development
+      "/socket.io": {
+        target: "http://localhost:4000",
+        ws: true,
+      },
     },
     hmr: {
       overlay: false,
