@@ -265,8 +265,8 @@ const MainApp: React.FC = () => {
           {page === 'slots' && <PlannerLayout />}
           {page === 'meetings' && <MeetingsPage />}
           {page === 'raffles' && <LuckyDraws />}
-          {/* Theme settings only for admin */}
-          {user.role === 'admin' && <ThemeSettings />}
+          {/* Theme settings only for admin on Admin page */}
+          {page === 'upload' && user.role === 'admin' && <ThemeSettings />}
         </div>
       </div>
     </ErrorBoundary>
