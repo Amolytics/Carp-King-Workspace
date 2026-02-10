@@ -180,43 +180,45 @@ const MainApp: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="app-shell">
-        <div className="app-header">
-          {customLogo ? (
-            <img src={customLogo} alt="Logo" className="app-logo" style={{ height: 40, width: 'auto', borderRadius: 6, background: '#fff', marginRight: 8 }} />
-          ) : (
-            <img src="/carp_king_logo.png" alt="Carp King Logo" className="app-logo" />
-          )}
-          <span className="app-title">Team Workspace</span>
-          <div className="app-nav">
-            <button onClick={() => setPage('welcome')} className="btn btn-nav">Home</button>
-            <button onClick={() => setPage('slots')} className="btn btn-nav">Slot Planner</button>
-            <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
-            <button onClick={() => setPage('analysis')} className="btn btn-nav">Analysis</button>
-            <button onClick={() => setPage('chat')} className="btn btn-nav btn-badge">
-              <span>Global Chat</span>
-              {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
-            </button>
-            <a
-              href={facebookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-nav"
-            >Facebook</a>
-            {user.role === 'admin' && (
-              <button onClick={() => setPage('upload')} className="btn btn-nav">Admin</button>
+        {page === 'upload' && (
+          <div className="app-header">
+            {customLogo ? (
+              <img src={customLogo} alt="Logo" className="app-logo" style={{ height: 40, width: 'auto', borderRadius: 6, background: '#fff', marginRight: 8 }} />
+            ) : (
+              <img src="/carp_king_logo.png" alt="Carp King Logo" className="app-logo" />
             )}
-            <button onClick={() => setPage('raffles')} className="btn btn-nav">Raffles</button>
+            <span className="app-title">Team Workspace</span>
+            <div className="app-nav">
+              <button onClick={() => setPage('welcome')} className="btn btn-nav">Home</button>
+              <button onClick={() => setPage('slots')} className="btn btn-nav">Slot Planner</button>
+              <button onClick={() => setPage('meetings')} className="btn btn-nav">Meetings</button>
+              <button onClick={() => setPage('analysis')} className="btn btn-nav">Analysis</button>
+              <button onClick={() => setPage('chat')} className="btn btn-nav btn-badge">
+                <span>Global Chat</span>
+                {chatUnread > 0 && <span className="unread-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>}
+              </button>
+              <a
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-nav"
+              >Facebook</a>
+              {user.role === 'admin' && (
+                <button onClick={() => setPage('upload')} className="btn btn-nav">Admin</button>
+              )}
+              <button onClick={() => setPage('raffles')} className="btn btn-nav">Raffles</button>
+            </div>
+            <button
+              className="nav-toggle"
+              onClick={() => setNavOpen(true)}
+              aria-label="Open navigation"
+              aria-expanded={navOpen}
+            >
+              Menu
+            </button>
+            <span className="user-badge">Welcome, {user.name} ({user.role})</span>
           </div>
-          <button
-            className="nav-toggle"
-            onClick={() => setNavOpen(true)}
-            aria-label="Open navigation"
-            aria-expanded={navOpen}
-          >
-            Menu
-          </button>
-          <span className="user-badge">Welcome, {user.name} ({user.role})</span>
-        </div>
+        )}
         <div className={`nav-backdrop ${navOpen ? 'open' : ''}`} onClick={() => setNavOpen(false)} />
         <div className={`nav-drawer ${navOpen ? 'open' : ''}`}>
           <button className="btn btn-ghost" onClick={() => setNavOpen(false)}>Close</button>
